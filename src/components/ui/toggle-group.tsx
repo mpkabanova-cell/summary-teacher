@@ -59,7 +59,7 @@ export function ToggleGroup<T extends string>({
               "whitespace-normal break-words",
               "border border-transparent",
               active
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "bg-primary text-primary-foreground shadow-sm border-primary hover:bg-primary hover:text-primary-foreground"
                 : "bg-muted/70 text-foreground hover:bg-muted border-border/60",
               disabled && "opacity-50 pointer-events-none",
               itemClassName,
