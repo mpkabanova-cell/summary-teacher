@@ -5,6 +5,7 @@ import {
   Download,
   Loader2,
   Pencil,
+  RefreshCw,
   Sparkles,
   Square,
   Trash2,
@@ -18,9 +19,15 @@ import { useSummarize } from "@/hooks/useSummarize";
 import { canGenerateMaterial, getCourse, getSelectedLesson } from "@/lib/lesson-directory";
 import { trackEvent } from "@/lib/analytics";
 import { exportMarkdownToDocx } from "@/lib/export-docx";
+import { MarkdownView } from "@/components/MarkdownView";
+import { preprocessSummaryContent } from "@/lib/math-preprocess";
 import {
   formatSettingsPills,
   getRegeneratedMessage,
+  splitMaterialSections,
+  MATERIAL_BLOCK_ORDER,
+  MATERIAL_SECTIONS,
+  type MaterialBlockId,
 } from "@/lib/summary-types";
 
 export default function Index() {
@@ -39,6 +46,8 @@ export default function Index() {
     error,
     generate,
     regenerate,
+    regenerateBlock,
+    activeBlock,
     resetContent,
     cancel,
     isBusy,
