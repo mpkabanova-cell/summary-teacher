@@ -105,6 +105,7 @@ export function useSummarize() {
       append?: boolean;
       block?: MaterialBlockId;
       existingBlocks?: Partial<Record<MaterialBlockId, string>>;
+      blockRequest?: string;
     }) => {
       abortRef.current?.abort();
       const controller = new AbortController();
@@ -133,6 +134,7 @@ export function useSummarize() {
             refinement: params.refinement,
             block: params.block,
             existingBlocks: params.existingBlocks,
+            blockRequest: params.blockRequest,
           },
           (chunk, blockId) => {
             if (isBlockStream && blockId) {
@@ -229,7 +231,10 @@ export function useSummarize() {
   }, [runStream, setActiveContentFormat]);
 
   const regenerateBlock = useCallback(
-    async (blockId: MaterialBlockId) => {
+    async (
+      blockId: MaterialBlockId,
+      options?: { detail?: SummarySettings["detail"]; level?: SummarySettings["level"]; blockRequest?: string },
+    ) => {
       if (!canGenerateMaterial(0, settingsRef.current.lessonNumber, settingsRef.current.courseId)) {
         throw new Error("Выберите тему урока");
       }
@@ -237,7 +242,13 @@ export function useSummarize() {
       if (!sections) {
         throw new Error("Не удалось определить блоки материала");
       }
-      const activeSettings = settingsRef.current;
+      // Переопределения детализации и стиля действуют только на этот блок
+      // и не меняют общие настройки комплекта.
+      const activeSettings: SummarySettings = {
+        ...settingsRef.current,
+        ...(options?.detail ? { detail: options.detail } : {}),
+        ...(options?.level ? { level: options.level } : {}),
+      };
       blocksRef.current = { ...sections };
       const existingBlocks = Object.fromEntries(
         Object.entries(sections).filter(([id]) => id !== blockId),
@@ -246,6 +257,7 @@ export function useSummarize() {
         settings: activeSettings,
         block: blockId,
         existingBlocks,
+        blockRequest: options?.blockRequest?.trim() || undefined,
       });
     },
     [content, runStream],
