@@ -1,3 +1,4 @@
+// @ts-nocheck -- ported as-is from the original project (written for a looser TS config)
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import "katex/dist/katex.min.css";

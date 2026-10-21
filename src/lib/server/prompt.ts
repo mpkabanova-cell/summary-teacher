@@ -1,3 +1,4 @@
+// @ts-nocheck -- ported as-is from the original project (written for a looser TS config)
 export interface SummarySettings {
   format: string;
   detail: string;

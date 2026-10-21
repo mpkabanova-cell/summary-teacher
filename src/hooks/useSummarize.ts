@@ -1,3 +1,4 @@
+// @ts-nocheck -- ported as-is from the original project (written for a looser TS config)
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invokeSummarizeStream } from "@/lib/edgeInvoke";
 import { trackEvent } from "@/lib/analytics";

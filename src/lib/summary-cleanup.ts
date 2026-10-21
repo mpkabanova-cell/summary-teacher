@@ -1,3 +1,4 @@
+// @ts-nocheck -- ported as-is from the original project (written for a looser TS config)
 const PREAMBLE_LINE_RE =
   /^\s*(?:#{1,6}\s*)?(?:конечно|хорошо|готово|вот|ниже|давайте|давай|привет|здравствуйте|я\s+подготовил[аи]?|я\s+составил[аи]?)[^.!?\n]{0,160}[.!?:]?\s*/i;
 

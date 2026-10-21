@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/summarize")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env.OPENROUTER_API_KEY;
+        const apiKey = process.env["OPENROUTER_API_KEY"];
         if (!apiKey) {
           return Response.json({ error: "OPENROUTER_API_KEY не настроен" }, { status: 500 });
         }

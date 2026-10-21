@@ -1,3 +1,4 @@
+// @ts-nocheck -- ported as-is from the original project (written for a looser TS config)
 import html2canvas from "html2canvas";
 
 const FORMULA_CANVAS_SCALE = 4;

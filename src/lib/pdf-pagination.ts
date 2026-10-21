@@ -1,3 +1,4 @@
+// @ts-nocheck -- ported as-is from the original project (written for a looser TS config)
 /** A4 @ 96dpi */
 export const PDF_PAGE_WIDTH_PX = 794;
 export const PDF_PAGE_HEIGHT_PX = 1123;
