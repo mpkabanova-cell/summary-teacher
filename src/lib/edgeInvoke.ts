@@ -4,6 +4,9 @@ export interface StreamChunk {
   content?: string;
   error?: string;
   done?: boolean;
+  block?: string;
+  blockStart?: string;
+  blockDone?: string;
 }
 
 type EdgeFunctionName = "summarize" | "feedback";
@@ -48,8 +51,9 @@ function formatHttpError(status: number, body: string): string {
 
 export async function invokeSummarizeStream(
   body: SummarizeRequest,
-  onChunk: (text: string) => void,
+  onChunk: (text: string, block?: string) => void,
   signal?: AbortSignal,
+  onBlockEvent?: (type: "start" | "done", block: string) => void,
 ): Promise<void> {
   const init: RequestInit = {
     method: "POST",
@@ -102,7 +106,9 @@ export async function invokeSummarizeStream(
           status?: string;
         };
         if (parsed.error) throw new Error(parsed.error);
-        if (parsed.content) onChunk(parsed.content);
+        if (parsed.blockStart) onBlockEvent?.("start", parsed.blockStart);
+        if (parsed.blockDone) onBlockEvent?.("done", parsed.blockDone);
+        if (parsed.content) onChunk(parsed.content, parsed.block);
         if (parsed.done) return;
       } catch (e) {
         if (e instanceof SyntaxError) continue;

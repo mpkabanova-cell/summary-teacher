@@ -18,5 +18,5 @@
 - Lesson type is used only internally to pick the goal emphasis (src/lib/server/lesson-goal.ts) and is never printed.
 - Lesson selection uses a dropdown with seven fixed-height visible rows and recomputes proximity to the live Moscow calendar date each time it opens; this keeps date focus and neighboring lessons consistent across screens.
 
-- The active generation flow is topic-only and uses one combined bundle format; client and API reject file-based generation to keep section roles consistent.
+- The active generation flow is topic-only; client and API reject file-based generation. The kit is generated block by block (notes → algorithms → review → homework) in one SSE stream, each block receiving the previous ones as context; a single block can be regenerated with the other blocks passed as existingBlocks. Block prompts live in src/lib/server/prompt.ts (buildBlockSystemPrompt/buildBlockUserMessage); section splitting/assembly lives in src/lib/summary-types.ts.
 - Detail, explanation style and wishes are edited only after a result and applied by full regeneration, not appended refinements, to avoid duplicate sections.

@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { buildGenerationUserMessage, buildSystemPrompt } from "@/lib/server/prompt";
+import { buildBlockSystemPrompt, buildBlockUserMessage } from "@/lib/server/prompt";
 import { z } from "zod";
 import { canGenerateMaterial } from "@/lib/lesson-directory";
+import { MATERIAL_BLOCK_ORDER, MATERIAL_SECTIONS } from "@/lib/summary-types";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MODEL = "google/gemini-3.1-flash-lite";
 const CONNECT_TIMEOUT_MS = 30_000;
-const TOTAL_TIMEOUT_MS = 180_000;
+const BLOCK_TIMEOUT_MS = 180_000;
+const TOTAL_TIMEOUT_MS = 480_000;
+
+const BLOCK_IDS = MATERIAL_SECTIONS.map((s) => s.id) as [string, ...string[]];
 
 const requestSchema = z.object({
   images: z.array(z.never()).max(0).optional(),
@@ -18,6 +22,8 @@ const requestSchema = z.object({
     lessonNumber: z.number().int().min(1).max(300).optional(),
     courseId: z.string().regex(/^[a-z]+-\d{1,2}$/).optional(),
   }),
+  block: z.enum(BLOCK_IDS).optional(),
+  existingBlocks: z.record(z.enum(BLOCK_IDS), z.string().max(100_000)).optional(),
   existingContent: z.string().max(200_000).optional(),
   refinement: z.enum(["shorter", "examples", "simpler", "quiz"]).optional(),
 });
@@ -48,7 +54,7 @@ export const Route = createFileRoute("/api/public/summarize")({
                 controller.close();
                 return;
               }
-              const { settings, existingContent, refinement } = body;
+              const { settings, block, existingBlocks } = body;
               if (!canGenerateMaterial(0, settings.lessonNumber, settings.courseId)) {
                 send({ error: "Выберите тему урока" });
                 controller.close();
@@ -56,81 +62,104 @@ export const Route = createFileRoute("/api/public/summarize")({
               }
               send({ status: "processing" });
 
-              const systemPrompt = buildSystemPrompt(
-                settings,
-                0,
-                refinement,
-                existingContent,
-              );
-              const userContent: Array<Record<string, unknown>> = [
-                {
-                  type: "text",
-                  text: buildGenerationUserMessage(settings, existingContent, refinement),
-                },
-              ];
-
               const started = Date.now();
-              const abort = new AbortController();
-              const connectTimer = setTimeout(() => abort.abort(), CONNECT_TIMEOUT_MS);
-              const totalTimer = setTimeout(() => abort.abort(), TOTAL_TIMEOUT_MS);
 
-              const aiResponse = await fetch(OPENROUTER_URL, {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${apiKey}`,
-                  "Content-Type": "application/json",
-                  "HTTP-Referer": origin ?? "https://teach-summary.lovable.app",
-                  "X-Title": "Konspekt",
-                },
-                body: JSON.stringify({
-                  model: MODEL,
-                  stream: true,
-                  messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: userContent },
-                  ],
-                }),
-                signal: abort.signal,
-              });
-              clearTimeout(connectTimer);
+              /** Генерирует один блок, стримит дельты и возвращает полный текст. */
+              const generateBlock = async (
+                blockId: string,
+                contextBlocks: Record<string, string>,
+              ): Promise<string> => {
+                send({ blockStart: blockId });
+                const abort = new AbortController();
+                const connectTimer = setTimeout(() => abort.abort(), CONNECT_TIMEOUT_MS);
+                const blockTimer = setTimeout(() => abort.abort(), BLOCK_TIMEOUT_MS);
 
-              if (!aiResponse.ok || !aiResponse.body) {
-                const errText = await aiResponse.text();
-                console.error("[summarize] OpenRouter error", aiResponse.status, errText);
-                send({ error: `Ошибка AI (${aiResponse.status}). Попробуйте снова.` });
-                clearTimeout(totalTimer);
-                controller.close();
-                return;
-              }
+                const aiResponse = await fetch(OPENROUTER_URL, {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": origin ?? "https://teach-summary.lovable.app",
+                    "X-Title": "Konspekt",
+                  },
+                  body: JSON.stringify({
+                    model: MODEL,
+                    stream: true,
+                    messages: [
+                      { role: "system", content: buildBlockSystemPrompt(settings, blockId) },
+                      {
+                        role: "user",
+                        content: [
+                          {
+                            type: "text",
+                            text: buildBlockUserMessage(settings, blockId, contextBlocks),
+                          },
+                        ],
+                      },
+                    ],
+                  }),
+                  signal: abort.signal,
+                });
+                clearTimeout(connectTimer);
 
-              const reader = aiResponse.body.getReader();
-              const decoder = new TextDecoder();
-              let buffer = "";
-              while (true) {
-                if (Date.now() - started > TOTAL_TIMEOUT_MS) {
-                  send({ error: "Превышено время ожидания" });
-                  break;
+                if (!aiResponse.ok || !aiResponse.body) {
+                  const errText = await aiResponse.text();
+                  console.error("[summarize] OpenRouter error", aiResponse.status, errText);
+                  clearTimeout(blockTimer);
+                  throw new Error(`Ошибка AI (${aiResponse.status}). Попробуйте снова.`);
                 }
-                const { done, value } = await reader.read();
-                if (done) break;
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split("\n");
-                buffer = lines.pop() ?? "";
-                for (const line of lines) {
-                  if (!line.startsWith("data: ")) continue;
-                  const payload = line.slice(6).trim();
-                  if (payload === "[DONE]") continue;
-                  try {
-                    const delta = JSON.parse(payload).choices?.[0]?.delta?.content;
-                    if (delta) send({ content: delta });
-                  } catch {
-                    /* skip */
+
+                const reader = aiResponse.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                let text = "";
+                while (true) {
+                  if (Date.now() - started > TOTAL_TIMEOUT_MS) {
+                    throw new Error("Превышено время ожидания");
+                  }
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  buffer += decoder.decode(value, { stream: true });
+                  const lines = buffer.split("\n");
+                  buffer = lines.pop() ?? "";
+                  for (const line of lines) {
+                    if (!line.startsWith("data: ")) continue;
+                    const payload = line.slice(6).trim();
+                    if (payload === "[DONE]") continue;
+                    try {
+                      const delta = JSON.parse(payload).choices?.[0]?.delta?.content;
+                      if (delta) {
+                        text += delta;
+                        send({ block: blockId, content: delta });
+                      }
+                    } catch {
+                      /* skip */
+                    }
                   }
                 }
+                clearTimeout(blockTimer);
+                send({ blockDone: blockId });
+                return text;
+              };
+
+              if (block) {
+                // Перегенерация одного блока: остальные передаются как контекст.
+                const context: Record<string, string> = {};
+                for (const [id, text] of Object.entries(existingBlocks ?? {})) {
+                  if (id !== block && text) context[id] = text;
+                }
+                await generateBlock(block, context);
+              } else {
+                // Полный комплект: конспект → памятка → повторение → пример ДЗ,
+                // каждый следующий блок получает предыдущие как контекст.
+                const generated: Record<string, string> = {};
+                for (const blockId of MATERIAL_BLOCK_ORDER) {
+                  generated[blockId] = await generateBlock(blockId, { ...generated });
+                }
               }
+
               send({ done: true });
               controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-              clearTimeout(totalTimer);
               controller.close();
             } catch (e) {
               const message = e instanceof Error ? e.message : "Ошибка генерации";

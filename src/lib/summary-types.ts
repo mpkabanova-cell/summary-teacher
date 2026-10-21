@@ -189,6 +189,8 @@ export interface SummarizeRequest {
   settings: SummarySettings;
   existingContent?: string;
   refinement?: RefinementType;
+  block?: MaterialBlockId;
+  existingBlocks?: Partial<Record<MaterialBlockId, string>>;
 }
 
 export interface FeedbackPayload {
@@ -200,8 +202,64 @@ export interface FeedbackPayload {
 /** Separate teaching roles prevent repeating the same theory and exercises. */
 export const MATERIAL_SECTIONS = [
   { id: "notes", title: "Опорный конспект", role: "theory", objective: true, workedExamples: true },
-  { id: "algorithms", title: "Памятки и алгоритмы", role: "procedure", objective: false, workedExamples: false },
-  { id: "homework", title: "Домашние задания", role: "practice", objective: false, workedExamples: false },
-  { id: "review", title: "Материалы для повторения и систематизации", role: "retrieval", objective: false, workedExamples: false },
+  { id: "algorithms", title: "Памятка и алгоритм", role: "procedure", objective: false, workedExamples: false },
+  { id: "review", title: "Материал для повторения и систематизации", role: "retrieval", objective: false, workedExamples: false },
+  { id: "homework", title: "Пример домашнего задания", role: "practice", objective: false, workedExamples: false },
 ] as const;
+export type MaterialBlockId = (typeof MATERIAL_SECTIONS)[number]["id"];
+/** Порядок генерации комплекта: каждый блок получает предыдущие как контекст. */
+export const MATERIAL_BLOCK_ORDER: MaterialBlockId[] = ["notes", "algorithms", "review", "homework"];
 export const MATERIAL_POLICY = { allSections: true, allowDiagrams: false, duplicateTheory: false, duplicateExercises: false } as const;
+
+const BLOCK_HEADING_MATCHERS: [MaterialBlockId, RegExp][] = [
+  ["notes", /опорн/i],
+  ["algorithms", /памятк|алгоритм/i],
+  ["review", /повторен|систематиз/i],
+  ["homework", /домашн/i],
+];
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function stripOwnHeading(text: string, title: string): string {
+  return text
+    .replace(new RegExp(`^\\s*#{1,4}\\s*${escapeRegExp(title)}\\s*\\n?`, "i"), "")
+    .trim();
+}
+
+/** Собирает комплект из блоков в каноническом порядке с заголовками разделов. */
+export function assembleMaterialContent(
+  blocks: Partial<Record<MaterialBlockId, string>>,
+): string {
+  return MATERIAL_BLOCK_ORDER.filter((id) => blocks[id]?.trim())
+    .map((id) => {
+      const section = MATERIAL_SECTIONS.find((s) => s.id === id)!;
+      return `## ${section.title}\n\n${stripOwnHeading(blocks[id] ?? "", section.title)}`;
+    })
+    .join("\n\n");
+}
+
+/** Разбивает готовый комплект на блоки по заголовкам разделов; null, если структура не распознана. */
+export function splitMaterialSections(
+  content: string,
+): Partial<Record<MaterialBlockId, string>> | null {
+  const headingRe = /^##\s+(.+?)\s*$/gm;
+  const marks: { id: MaterialBlockId; start: number; bodyStart: number }[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = headingRe.exec(content)) !== null) {
+    const heading = match[1] ?? "";
+    const found = BLOCK_HEADING_MATCHERS.find(([, re]) => re.test(heading));
+    if (found && !marks.some((m) => m.id === found[0])) {
+      marks.push({ id: found[0], start: match.index, bodyStart: match.index + match[0].length });
+    }
+  }
+  if (marks.length === 0) return null;
+  marks.sort((a, b) => a.start - b.start);
+  const sections: Partial<Record<MaterialBlockId, string>> = {};
+  for (const [i, mark] of marks.entries()) {
+    const end = i + 1 < marks.length ? (marks[i + 1]?.start ?? content.length) : content.length;
+    sections[mark.id] = content.slice(mark.bodyStart, end).trim();
+  }
+  return sections;
+}

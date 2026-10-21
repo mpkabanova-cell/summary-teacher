@@ -5,6 +5,7 @@ import {
   Download,
   Loader2,
   Pencil,
+  RefreshCw,
   Sparkles,
   Square,
   Trash2,
@@ -18,9 +19,15 @@ import { useSummarize } from "@/hooks/useSummarize";
 import { canGenerateMaterial, getCourse, getSelectedLesson } from "@/lib/lesson-directory";
 import { trackEvent } from "@/lib/analytics";
 import { exportMarkdownToDocx } from "@/lib/export-docx";
+import { MarkdownView } from "@/components/MarkdownView";
+import { preprocessSummaryContent } from "@/lib/math-preprocess";
 import {
   formatSettingsPills,
   getRegeneratedMessage,
+  splitMaterialSections,
+  MATERIAL_BLOCK_ORDER,
+  MATERIAL_SECTIONS,
+  type MaterialBlockId,
 } from "@/lib/summary-types";
 
 export default function Index() {
@@ -39,6 +46,8 @@ export default function Index() {
     error,
     generate,
     regenerate,
+    regenerateBlock,
+    activeBlock,
     resetContent,
     cancel,
     isBusy,
@@ -95,6 +104,22 @@ export default function Index() {
       toast.success(getRegeneratedMessage(settings.format));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Не удалось перегенерировать");
+    }
+  };
+
+  const handleRegenerateBlock = async (blockId: MaterialBlockId) => {
+    const title = MATERIAL_SECTIONS.find((s) => s.id === blockId)?.title ?? "";
+    try {
+      setEditing(false);
+      await regenerateBlock(blockId);
+      trackEvent("ai_conspect_material_action", {
+        action: "regenerate_block",
+        block: blockId,
+        format: settings.format,
+      });
+      toast.success(`Блок «${title}» перегенерирован`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не удалось перегенерировать блок");
     }
   };
 
@@ -233,6 +258,11 @@ export default function Index() {
                 <ProcessingProgress
                   streaming={status === "streaming"}
                   format={settings.format}
+                  blockLabel={
+                    activeBlock
+                      ? MATERIAL_SECTIONS.find((s) => s.id === activeBlock)?.title
+                      : undefined
+                  }
                 />
               </div>
             )}
@@ -273,7 +303,12 @@ export default function Index() {
                     onCancelEdit={() => setEditing(false)}
                   />
                 ) : (
-                  <SummaryResult content={content} />
+                  <MaterialBlocksView
+                    content={content}
+                    isBusy={isBusy}
+                    activeBlock={activeBlock}
+                    onRegenerateBlock={(id) => void handleRegenerateBlock(id)}
+                  />
                 )}
               </div>
             )}
@@ -281,6 +316,60 @@ export default function Index() {
         </section>
       </main>
 
+    </div>
+  );
+}
+
+function MaterialBlocksView({
+  content,
+  isBusy,
+  activeBlock,
+  onRegenerateBlock,
+}: {
+  content: string;
+  isBusy: boolean;
+  activeBlock: MaterialBlockId | null;
+  onRegenerateBlock: (id: MaterialBlockId) => void;
+}) {
+  const sections = splitMaterialSections(content);
+  if (!sections || Object.keys(sections).length < 2) {
+    return <SummaryResult content={content} />;
+  }
+  return (
+    <div className="flex flex-col gap-6">
+      {MATERIAL_BLOCK_ORDER.filter((id) => sections[id] !== undefined).map((id) => {
+        const section = MATERIAL_SECTIONS.find((s) => s.id === id)!;
+        const body = sections[id] ?? "";
+        const isActive = activeBlock === id;
+        return (
+          <section key={id}>
+            <h2 className="mb-2 text-lg font-semibold">{section.title}</h2>
+            {body.trim() ? (
+              <article className="summary-content prose-sm max-w-none">
+                <MarkdownView markdown={preprocessSummaryContent(body)} />
+              </article>
+            ) : isActive ? (
+              <p className="text-sm text-muted-foreground">Создаём…</p>
+            ) : null}
+            <div className="mt-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => onRegenerateBlock(id)}
+                disabled={isBusy || !body.trim()}
+                className="rounded-lg border border-border bg-secondary text-secondary-foreground hover:bg-muted"
+              >
+                {isActive ? (
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 shrink-0" />
+                )}
+                Перегенерировать блок
+              </Button>
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

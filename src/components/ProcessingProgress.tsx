@@ -5,16 +5,20 @@ import type { SummaryFormat } from "@/lib/summary-types";
 interface ProcessingProgressProps {
   streaming?: boolean;
   format?: SummaryFormat;
+  blockLabel?: string;
 }
 
 export function ProcessingProgress({
   streaming,
   format = "notes",
+  blockLabel,
 }: ProcessingProgressProps) {
   const isQuestions = format === "qa";
-  const streamingLabel = isQuestions
-    ? "Формируем вопросы…"
-    : "Создаём материалы…";
+  const streamingLabel = blockLabel
+    ? `Создаём блок «${blockLabel}»…`
+    : isQuestions
+      ? "Формируем вопросы…"
+      : "Создаём материалы…";
 
   return (
     <motion.div

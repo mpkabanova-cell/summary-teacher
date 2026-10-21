@@ -7,10 +7,13 @@ import { canGenerateMaterial } from "@/lib/lesson-directory";
 import {
   DEFAULT_SETTINGS,
   normalizeSummarySettings,
+  assembleMaterialContent,
+  splitMaterialSections,
   FEEDBACK_SENT_KEY,
   HISTORY_INDEX_KEY,
   HISTORY_KEY,
   MAX_HISTORY,
+  type MaterialBlockId,
   type RefinementType,
   type SummaryFormat,
   type SummarySettings,
@@ -48,6 +51,8 @@ export function useSummarize() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const historyIndexRef = useRef(-1);
   const abortRef = useRef<AbortController | null>(null);
+  const blocksRef = useRef<Record<string, string>>({});
+  const [activeBlock, setActiveBlock] = useState<MaterialBlockId | null>(null);
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -95,6 +100,8 @@ export function useSummarize() {
       existingContent?: string;
       refinement?: RefinementType;
       append?: boolean;
+      block?: MaterialBlockId;
+      existingBlocks?: Partial<Record<MaterialBlockId, string>>;
     }) => {
       abortRef.current?.abort();
       const controller = new AbortController();
@@ -103,6 +110,8 @@ export function useSummarize() {
       setError(null);
       setStatus("processing");
 
+      const isBlockStream =
+        params.settings.format === "bundle" && !params.refinement;
       let accumulated = params.append
         ? `${params.existingContent ?? ""}\n\n---\n\n`
         : "";
@@ -119,14 +128,35 @@ export function useSummarize() {
             settings: params.settings,
             existingContent: params.existingContent,
             refinement: params.refinement,
+            block: params.block,
+            existingBlocks: params.existingBlocks,
           },
-          (chunk) => {
-            accumulated += chunk;
-            setContent(applyCleanup(accumulated));
+          (chunk, blockId) => {
+            if (isBlockStream && blockId) {
+              blocksRef.current[blockId] =
+                (blocksRef.current[blockId] ?? "") + chunk;
+              setContent(
+                applyCleanup(assembleMaterialContent(blocksRef.current)),
+              );
+            } else {
+              accumulated += chunk;
+              setContent(applyCleanup(accumulated));
+            }
           },
           controller.signal,
+          (type, blockId) => {
+            if (!isBlockStream || type !== "start") return;
+            blocksRef.current[blockId] = "";
+            setActiveBlock(blockId as MaterialBlockId);
+            setContent(applyCleanup(assembleMaterialContent(blocksRef.current)));
+          },
         );
-        const cleaned = applyCleanup(accumulated);
+        setActiveBlock(null);
+        const cleaned = applyCleanup(
+          isBlockStream
+            ? assembleMaterialContent(blocksRef.current)
+            : accumulated,
+        );
         setContent(cleaned);
         setStatus("done");
         saveSnapshot(cleaned, params.settings.format);
@@ -140,6 +170,7 @@ export function useSummarize() {
           });
         }
       } catch (e) {
+        setActiveBlock(null);
         if ((e as Error).name === "AbortError") return;
         setStatus("error");
         setError(e instanceof Error ? e.message : "Неизвестная ошибка");
@@ -154,6 +185,7 @@ export function useSummarize() {
       throw new Error("Выберите тему урока");
     }
     const activeSettings = settingsRef.current;
+    blocksRef.current = {};
     setContent("");
     setActiveContentFormat(activeSettings.format);
     await runStream({ settings: activeSettings });
@@ -187,10 +219,34 @@ export function useSummarize() {
       throw new Error("Выберите тему урока");
     }
     const activeSettings = settingsRef.current;
+    blocksRef.current = {};
     setContent("");
     setActiveContentFormat(activeSettings.format);
     await runStream({ settings: activeSettings });
   }, [runStream, setActiveContentFormat]);
+
+  const regenerateBlock = useCallback(
+    async (blockId: MaterialBlockId) => {
+      if (!canGenerateMaterial(0, settingsRef.current.lessonNumber, settingsRef.current.courseId)) {
+        throw new Error("Выберите тему урока");
+      }
+      const sections = splitMaterialSections(content);
+      if (!sections) {
+        throw new Error("Не удалось определить блоки материала");
+      }
+      const activeSettings = settingsRef.current;
+      blocksRef.current = { ...sections };
+      const existingBlocks = Object.fromEntries(
+        Object.entries(sections).filter(([id]) => id !== blockId),
+      );
+      await runStream({
+        settings: activeSettings,
+        block: blockId,
+        existingBlocks,
+      });
+    },
+    [content, runStream],
+  );
 
   const resetContent = useCallback(() => {
     abortRef.current?.abort();
@@ -263,6 +319,8 @@ export function useSummarize() {
     error,
     generate,
     regenerate,
+    regenerateBlock,
+    activeBlock,
     refine,
     resetContent,
     cancel,
