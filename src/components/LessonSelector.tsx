@@ -28,7 +28,7 @@ export function LessonSelector({ courseId = DEFAULT_COURSE_ID, lessonNumber, onC
   return (
     <div className="space-y-3 border-b border-border pb-4">
       <div className="grid grid-cols-[minmax(0,1fr)_100px] gap-3">
-        <label className="space-y-1 text-xs font-medium text-muted-foreground">
+        <div className="space-y-1 text-xs font-medium text-muted-foreground">
           <span>Предмет</span>
           <Select value={course.subject} disabled={disabled} onValueChange={(subject) => {
             const grades = gradesForSubject(subject);
@@ -38,8 +38,8 @@ export function LessonSelector({ courseId = DEFAULT_COURSE_ID, lessonNumber, onC
             <SelectTrigger aria-label="Предмет" className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent>{SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
           </Select>
-        </label>
-        <label className="space-y-1 text-xs font-medium text-muted-foreground">
+        </div>
+        <div className="space-y-1 text-xs font-medium text-muted-foreground">
           <span>Класс</span>
           <Select value={String(course.grade)} disabled={disabled} onValueChange={(grade) => {
             const next = findCourse(course.subject, Number(grade));
@@ -48,7 +48,7 @@ export function LessonSelector({ courseId = DEFAULT_COURSE_ID, lessonNumber, onC
             <SelectTrigger aria-label="Класс" className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent>{gradesForSubject(course.subject).map((g) => <SelectItem key={g} value={String(g)}>{g}</SelectItem>)}</SelectContent>
           </Select>
-        </label>
+        </div>
       </div>
       <div className="space-y-1">
         <p className="text-xs font-medium text-muted-foreground">Тема урока</p>
