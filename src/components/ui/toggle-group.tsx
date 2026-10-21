@@ -1,57 +1,71 @@
-"use client";
-
-import * as React from "react";
-import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
-import { type VariantProps } from "class-variance-authority";
-
 import { cn } from "@/lib/utils";
-import { toggleVariants } from "@/components/ui/toggle";
 
-const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({
-  size: "default",
-  variant: "default",
-});
+export interface ToggleOption<T extends string> {
+  value: T;
+  label: string;
+}
 
-const ToggleGroup = React.forwardRef<
-  React.ElementRef<typeof ToggleGroupPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Root> &
-    VariantProps<typeof toggleVariants>
->(({ className, variant, size, children, ...props }, ref) => (
-  <ToggleGroupPrimitive.Root
-    ref={ref}
-    className={cn("flex items-center justify-center gap-1", className)}
-    {...props}
-  >
-    <ToggleGroupContext.Provider value={{ variant, size }}>{children}</ToggleGroupContext.Provider>
-  </ToggleGroupPrimitive.Root>
-));
+interface ToggleGroupProps<T extends string> {
+  options: ToggleOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
+  disabled?: boolean;
+  className?: string;
+  columns?: 2 | 3 | 4 | 5;
+  itemClassName?: string;
+}
 
-ToggleGroup.displayName = ToggleGroupPrimitive.Root.displayName;
-
-const ToggleGroupItem = React.forwardRef<
-  React.ElementRef<typeof ToggleGroupPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Item> &
-    VariantProps<typeof toggleVariants>
->(({ className, children, variant, size, ...props }, ref) => {
-  const context = React.useContext(ToggleGroupContext);
+export function ToggleGroup<T extends string>({
+  options,
+  value,
+  onChange,
+  disabled,
+  className,
+  columns,
+  itemClassName,
+}: ToggleGroupProps<T>) {
+  const gridCols =
+    columns === 5
+      ? "grid-cols-2 sm:grid-cols-5"
+      : columns === 4
+        ? "grid-cols-2 sm:grid-cols-4"
+        : columns === 3
+          ? "grid-cols-3"
+          : columns === 2
+            ? "grid-cols-2"
+            : "flex flex-wrap";
 
   return (
-    <ToggleGroupPrimitive.Item
-      ref={ref}
+    <div
+      role="group"
       className={cn(
-        toggleVariants({
-          variant: context.variant || variant,
-          size: context.size || size,
-        }),
+        columns ? `grid gap-2 ${gridCols}` : "flex flex-wrap gap-2",
         className,
       )}
-      {...props}
     >
-      {children}
-    </ToggleGroupPrimitive.Item>
+      {options.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              "min-w-0 rounded-xl px-3 py-2.5 text-sm font-medium leading-tight transition-colors text-center",
+              "whitespace-nowrap overflow-hidden text-ellipsis",
+              "border border-transparent",
+              active
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted/70 text-foreground hover:bg-muted border-border/60",
+              disabled && "opacity-50 pointer-events-none",
+              itemClassName,
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
   );
-});
-
-ToggleGroupItem.displayName = ToggleGroupPrimitive.Item.displayName;
-
-export { ToggleGroup, ToggleGroupItem };
+}
