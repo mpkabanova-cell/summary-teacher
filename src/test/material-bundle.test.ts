@@ -72,6 +72,21 @@ describe("Block assembly and splitting", () => {
     const content = assembleMaterialContent({ notes: "## Опорный конспект\n\nТеория." });
     expect(content.match(/Опорный конспект/g)).toHaveLength(1);
   });
+  it("strips a duplicated lesson topic heading after the section heading", () => {
+    const content = assembleMaterialContent(
+      { review: "## Систематизация знаний о выразительных средствах\n\nОбобщающая таблица." },
+      "Систематизация знаний о выразительных средствах",
+    );
+    expect(content.match(/Систематизация знаний о выразительных средствах/g)).toBeNull();
+    expect(content).toContain("Обобщающая таблица.");
+  });
+  it("keeps a leading heading that is not the section title or the topic", () => {
+    const content = assembleMaterialContent(
+      { notes: "### Цель урока\n\nНаучиться складывать дроби." },
+      "Сложение дробей",
+    );
+    expect(content).toContain("### Цель урока");
+  });
   it("round-trips assembled content back into blocks", () => {
     const sections = splitMaterialSections(assembleMaterialContent(blocks));
     expect(sections).toEqual(blocks);
