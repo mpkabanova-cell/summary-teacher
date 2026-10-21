@@ -108,7 +108,11 @@ export default function Index() {
     }
     setIsExportingDocx(true);
     try {
-      await exportMarkdownToDocx(content);
+      const topicPart = selectedLesson
+        ? ` № ${selectedLesson.number}. ${selectedLesson.title}`
+        : "";
+      const filename = `Конспект${topicPart}.docx`.replace(/[\\/:*?"<>|]+/g, " ");
+      await exportMarkdownToDocx(content, { filename });
       trackEvent("ai_conspect_material_action", {
         action: "export_docx",
         format: contentFormat,
