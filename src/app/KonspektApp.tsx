@@ -113,11 +113,14 @@ export default function Index() {
     }
   };
 
-  const handleRegenerateBlock = async (blockId: MaterialBlockId) => {
+  const handleRegenerateBlock = async (
+    blockId: MaterialBlockId,
+    options?: { detail?: SummarySettings["detail"]; level?: SummarySettings["level"]; blockRequest?: string },
+  ) => {
     const title = MATERIAL_SECTIONS.find((s) => s.id === blockId)?.title ?? "";
     try {
       setEditing(false);
-      await regenerateBlock(blockId);
+      await regenerateBlock(blockId, options);
       trackEvent("ai_conspect_material_action", {
         action: "regenerate_block",
         block: blockId,
