@@ -35,7 +35,7 @@ export function LessonSelector({ courseId = DEFAULT_COURSE_ID, lessonNumber, onC
             const next = findCourse(subject, grades.includes(course.grade) ? course.grade : grades[0]!);
             if (next) onCourseChange(next.id);
           }}>
-            <SelectTrigger aria-label="Предмет" className="h-9"><SelectValue /></SelectTrigger>
+            <SelectTrigger aria-label="Предмет" className="h-9 bg-card"><SelectValue /></SelectTrigger>
             <SelectContent>{SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
           </Select>
         </div>
@@ -45,7 +45,7 @@ export function LessonSelector({ courseId = DEFAULT_COURSE_ID, lessonNumber, onC
             const next = findCourse(course.subject, Number(grade));
             if (next) onCourseChange(next.id);
           }}>
-            <SelectTrigger aria-label="Класс" className="h-9"><SelectValue /></SelectTrigger>
+            <SelectTrigger aria-label="Класс" className="h-9 bg-card"><SelectValue /></SelectTrigger>
             <SelectContent>{gradesForSubject(course.subject).map((g) => <SelectItem key={g} value={String(g)}>{g}</SelectItem>)}</SelectContent>
           </Select>
         </div>
@@ -57,7 +57,7 @@ export function LessonSelector({ courseId = DEFAULT_COURSE_ID, lessonNumber, onC
             <PopoverTrigger asChild>
               <Button variant="outline" disabled={disabled} role="combobox" aria-expanded={open}
                 aria-label="Тема урока"
-                className="h-auto min-h-11 min-w-0 flex-1 justify-between whitespace-normal text-left">
+                className="h-auto min-h-11 min-w-0 flex-1 justify-between whitespace-normal bg-card text-left">
                 <BookOpen className="h-4 w-4 shrink-0 text-primary" />
                 <span className="min-w-0 flex-1 break-words">{selected ? `№ ${selected.number} · ${selected.title}` : "Выбрать тему урока"}</span>
                 <ChevronDown className="h-4 w-4 shrink-0" />
