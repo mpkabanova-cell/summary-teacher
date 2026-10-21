@@ -5,7 +5,7 @@ export interface SummarySettings {
   detail: string;
   level: string;
   focus: string;
-  lessonNumber?: number;
+  lessonNumber?: number | undefined;
 }
 
 const FORMAT_INSTRUCTIONS: Record<string, string> = {

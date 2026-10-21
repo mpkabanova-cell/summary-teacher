@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LESSONS, SUBJECT, GRADE, formatLessonDate, getSelectedLesson, nearestLessonIndex, searchLessons } from "@/lib/lesson-directory";
 
 export function LessonSelector({ lessonNumber, onChange, disabled }: {
-  lessonNumber?: number; onChange: (number?: number) => void; disabled: boolean;
+  lessonNumber?: number | undefined; onChange: (number?: number) => void; disabled: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
