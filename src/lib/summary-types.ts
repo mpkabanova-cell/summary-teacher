@@ -231,7 +231,7 @@ function stripOwnHeading(text: string, title: string, topic?: string): string {
   let result = text.trim();
   const banned = new Set([normalizeHeading(title)]);
   if (topic?.trim()) banned.add(normalizeHeading(topic));
-  const leading = /^#{1,4}\s+(.+?)\s*#*\s*\n?/;
+  const leading = /^#{1,4}[ \t]+([^\n]*?)[ \t#]*(\n|$)/;
   for (let i = 0; i < 2; i++) {
     const match = result.match(leading);
     if (!match || !banned.has(normalizeHeading(match[1] ?? ""))) break;
