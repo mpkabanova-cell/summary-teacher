@@ -243,11 +243,12 @@ function stripOwnHeading(text: string, title: string, topic?: string): string {
 /** Собирает комплект из блоков в каноническом порядке с заголовками разделов. */
 export function assembleMaterialContent(
   blocks: Partial<Record<MaterialBlockId, string>>,
+  topic?: string,
 ): string {
   return MATERIAL_BLOCK_ORDER.filter((id) => blocks[id]?.trim())
     .map((id) => {
       const section = MATERIAL_SECTIONS.find((s) => s.id === id)!;
-      return `## ${section.title}\n\n${stripOwnHeading(blocks[id] ?? "", section.title)}`;
+      return `## ${section.title}\n\n${stripOwnHeading(blocks[id] ?? "", section.title, topic)}`;
     })
     .join("\n\n");
 }
