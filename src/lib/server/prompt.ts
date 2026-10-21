@@ -1,5 +1,6 @@
 // @ts-nocheck -- ported as-is from the original project (written for a looser TS config)
 import { GRADE, SUBJECT, CURRICULUM_URL, getSelectedLesson } from "@/lib/lesson-directory";
+import { buildChildSafetyPrompt } from "./child-safety";
 export interface SummarySettings {
   format: string;
   detail: string;
@@ -247,7 +248,9 @@ export function buildSystemPrompt(
 - Числа, степени, индексы и формулы переписывай точно. Не заменяй 10 на I0, l0, O или похожие символы
 - Не дублируй один и тот же раздел или таблицу`;
 
-  let prompt = `${sourceRules}
+  let prompt = `${buildChildSafetyPrompt()}
+
+${sourceRules}
 
 ${lesson ? format.replaceAll("загруженным страницам", "выбранной теме урока") : format}
 ${lessonOutputRule}
