@@ -306,7 +306,7 @@ export function buildGenerationUserMessage(
 
   const lesson = getLessonDetails(settings.lessonNumber, settings.courseId);
   const course = getCourse(settings.courseId);
-  if (lesson && course) return `Создай материал в формате «${settings.format}» по уроку № ${lesson.number}: «${lesson.title}». Предмет: ${course.subject}, класс: ${course.grade}. Опирайся на цель и понятия урока, школьную программу РФ и выбранный уровень объяснения. Создай все четыре раздела сразу, без выбора формата и без схем. Не дублируй содержание.${userFocus}`;
+  if (lesson && course) return `Создай материал в формате «${settings.format}» по уроку № ${lesson.number}: «${lesson.title}». Предмет: ${course.subject}, класс: ${course.grade}. Опирайся на цель и понятия урока, школьную программу РФ и выбранный уровень объяснения. Без схем. Не дублируй содержание.${userFocus}`;
 
   return (
     (GENERATION_USER_MESSAGES[settings.format] ?? GENERATION_USER_MESSAGES.notes) + userFocus
