@@ -42,6 +42,11 @@ function mathRun(latex: string): InlineChild {
 }
 
 function renderTextWithMath(text: string, style: InlineStyle): InlineChild[] {
+  const styleProps = {
+    ...(style.bold ? { bold: true } : {}),
+    ...(style.italics ? { italics: true } : {}),
+    ...(style.strike ? { strike: true } : {}),
+  };
   const out: InlineChild[] = [];
   let lastIndex = 0;
   MATH_PATTERN.lastIndex = 0;
@@ -51,9 +56,7 @@ function renderTextWithMath(text: string, style: InlineStyle): InlineChild[] {
       out.push(
         new TextRun({
           text: text.slice(lastIndex, match.index),
-          bold: style.bold,
-          italics: style.italics,
-          strike: style.strike,
+          ...styleProps,
         }),
       );
     }
@@ -64,9 +67,7 @@ function renderTextWithMath(text: string, style: InlineStyle): InlineChild[] {
     out.push(
       new TextRun({
         text: text.slice(lastIndex),
-        bold: style.bold,
-        italics: style.italics,
-        strike: style.strike,
+        ...styleProps,
       }),
     );
   }
