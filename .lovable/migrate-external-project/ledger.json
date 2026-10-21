@@ -2,7 +2,7 @@
  {"capability":"code","source":"React+Vite SPA","outcome":"migrate to TanStack Start","status":"done","next_action":"none"},
  {"capability":"schema/records","source":"none (no tables)","outcome":"not applicable","status":"verified","next_action":"none"},
  {"capability":"auth","source":"none","outcome":"not applicable","status":"verified","next_action":"none"},
- {"capability":"summarize endpoint","source":"edge fn summarize (OpenRouter Gemini 2.5 Flash)","outcome":"server route /api/public/summarize, OpenRouter preserved","status":"pending","next_action":"add OPENROUTER_API_KEY and test generation"},
+ {"capability":"summarize endpoint","source":"edge fn summarize (OpenRouter Gemini 2.5 Flash)","outcome":"server route /api/public/summarize, OpenRouter preserved","status":"verified","next_action":"none"},
  {"capability":"feedback endpoint","source":"edge fn feedback-proxy (logs only)","outcome":"server route /api/public/feedback","status":"done","next_action":"none"},
  {"capability":"analytics","source":"Yandex Metrika + UXFeedback","outcome":"preserved in root head","status":"done","next_action":"none"},
  {"capability":"cutover","source":"Render static site","outcome":"publish on Lovable","status":"pending","next_action":"user publishes"}

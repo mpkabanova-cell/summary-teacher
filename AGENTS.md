@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- AI summaries stream from `src/routes/api/public/summarize.ts` (SSE, OpenRouter, key in `OPENROUTER_API_KEY`) — kept from the original app so output quality is unchanged.
+- The main page loads client-only (`ClientOnly` + lazy import of `src/app/KonspektApp.tsx`) because pdf.js/jsPDF/html2canvas need the browser.
