@@ -303,7 +303,12 @@ export default function Index() {
                     onCancelEdit={() => setEditing(false)}
                   />
                 ) : (
-                  <SummaryResult content={content} />
+                  <MaterialBlocksView
+                    content={content}
+                    isBusy={isBusy}
+                    activeBlock={activeBlock}
+                    onRegenerateBlock={(id) => void handleRegenerateBlock(id)}
+                  />
                 )}
               </div>
             )}
