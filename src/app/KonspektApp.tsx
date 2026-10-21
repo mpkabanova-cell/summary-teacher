@@ -107,6 +107,22 @@ export default function Index() {
     }
   };
 
+  const handleRegenerateBlock = async (blockId: MaterialBlockId) => {
+    const title = MATERIAL_SECTIONS.find((s) => s.id === blockId)?.title ?? "";
+    try {
+      setEditing(false);
+      await regenerateBlock(blockId);
+      trackEvent("ai_conspect_material_action", {
+        action: "regenerate_block",
+        block: blockId,
+        format: settings.format,
+      });
+      toast.success(`Блок «${title}» перегенерирован`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не удалось перегенерировать блок");
+    }
+  };
+
   const handleExportDocx = async () => {
     if (!content.trim()) {
       toast.error("Нет текста для DOCX");
@@ -242,6 +258,11 @@ export default function Index() {
                 <ProcessingProgress
                   streaming={status === "streaming"}
                   format={settings.format}
+                  blockLabel={
+                    activeBlock
+                      ? MATERIAL_SECTIONS.find((s) => s.id === activeBlock)?.title
+                      : undefined
+                  }
                 />
               </div>
             )}
