@@ -191,6 +191,8 @@ export interface SummarizeRequest {
   refinement?: RefinementType;
   block?: MaterialBlockId;
   existingBlocks?: Partial<Record<MaterialBlockId, string>>;
+  /** Свободный запрос «что исправить» при перегенерации одного блока. */
+  blockRequest?: string;
 }
 
 export interface FeedbackPayload {

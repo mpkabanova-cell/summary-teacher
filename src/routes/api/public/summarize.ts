@@ -24,6 +24,7 @@ const requestSchema = z.object({
   }),
   block: z.enum(BLOCK_IDS).optional(),
   existingBlocks: z.record(z.enum(BLOCK_IDS), z.string().max(100_000)).optional(),
+  blockRequest: z.string().max(2000).optional(),
   existingContent: z.string().max(200_000).optional(),
   refinement: z.enum(["shorter", "examples", "simpler", "quiz"]).optional(),
 });
