@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicFeedbackRouteImport } from './routes/api/public/feedback'
+import { Route as ApiPublicSummarizeRouteImport } from './routes/api/public/summarize'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFeedbackRoute = ApiPublicFeedbackRouteImport.update({
+  id: '/api/public/feedback',
+  path: '/api/public/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSummarizeRoute = ApiPublicSummarizeRouteImport.update({
+  id: '/api/public/summarize',
+  path: '/api/public/summarize',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/feedback': typeof ApiPublicFeedbackRoute
+  '/api/public/summarize': typeof ApiPublicSummarizeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/feedback': typeof ApiPublicFeedbackRoute
+  '/api/public/summarize': typeof ApiPublicSummarizeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/feedback': typeof ApiPublicFeedbackRoute
+  '/api/public/summarize': typeof ApiPublicSummarizeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/public/feedback' | '/api/public/summarize'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/public/feedback' | '/api/public/summarize'
+  id: '__root__' | '/' | '/api/public/feedback' | '/api/public/summarize'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicFeedbackRoute: typeof ApiPublicFeedbackRoute
+  ApiPublicSummarizeRoute: typeof ApiPublicSummarizeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/feedback': {
+      id: '/api/public/feedback'
+      path: '/api/public/feedback'
+      fullPath: '/api/public/feedback'
+      preLoaderRoute: typeof ApiPublicFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/summarize': {
+      id: '/api/public/summarize'
+      path: '/api/public/summarize'
+      fullPath: '/api/public/summarize'
+      preLoaderRoute: typeof ApiPublicSummarizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicFeedbackRoute: ApiPublicFeedbackRoute,
+  ApiPublicSummarizeRoute: ApiPublicSummarizeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
