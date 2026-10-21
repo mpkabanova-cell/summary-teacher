@@ -68,6 +68,9 @@
 }
 
 @layer components {
+  .lesson-dialog { width: min(42rem, calc(100vw - 1.5rem)); max-height: calc(100dvh - 1.5rem); }
+  .lesson-list { height: 392px; flex-shrink: 0; }
+  .lesson-row { height: 56px; min-height: 56px; }
   .app-card {
     @apply rounded-2xl border border-border/80 bg-card;
     box-shadow: var(--shadow-soft-value);

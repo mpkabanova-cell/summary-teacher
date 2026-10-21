@@ -2,6 +2,8 @@ import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup } from "@/components/ui/toggle-group";
+import { LessonSelector } from "@/components/LessonSelector";
+import { canGenerateMaterial } from "@/lib/lesson-directory";
 import {
   DETAIL_OPTIONS,
   FORMAT_OPTIONS,
@@ -47,6 +49,7 @@ export function SummarySettingsPanel({
 
   return (
     <div className="space-y-4">
+      <LessonSelector lessonNumber={settings.lessonNumber} onChange={(number) => update("lessonNumber", number)} disabled={isBusy} />
       <div>
         <SectionLabel>Формат</SectionLabel>
         <ToggleGroup
@@ -99,7 +102,7 @@ export function SummarySettingsPanel({
           className="h-11 min-w-48 shrink-0 rounded-xl whitespace-nowrap leading-tight"
           size="default"
           onClick={onGenerate}
-          disabled={!hasImages || isBusy}
+          disabled={!canGenerateMaterial(hasImages ? 1 : 0, settings.lessonNumber) || isBusy}
         >
           <Sparkles className="h-4 w-4" />
           {getGenerateActionLabel(settings.format, hasContent)}
