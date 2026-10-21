@@ -100,6 +100,8 @@ export function useSummarize() {
       existingContent?: string;
       refinement?: RefinementType;
       append?: boolean;
+      block?: MaterialBlockId;
+      existingBlocks?: Partial<Record<MaterialBlockId, string>>;
     }) => {
       abortRef.current?.abort();
       const controller = new AbortController();
@@ -108,6 +110,8 @@ export function useSummarize() {
       setError(null);
       setStatus("processing");
 
+      const isBlockStream =
+        params.settings.format === "bundle" && !params.refinement;
       let accumulated = params.append
         ? `${params.existingContent ?? ""}\n\n---\n\n`
         : "";
@@ -124,14 +128,35 @@ export function useSummarize() {
             settings: params.settings,
             existingContent: params.existingContent,
             refinement: params.refinement,
+            block: params.block,
+            existingBlocks: params.existingBlocks,
           },
-          (chunk) => {
-            accumulated += chunk;
-            setContent(applyCleanup(accumulated));
+          (chunk, blockId) => {
+            if (isBlockStream && blockId) {
+              blocksRef.current[blockId] =
+                (blocksRef.current[blockId] ?? "") + chunk;
+              setContent(
+                applyCleanup(assembleMaterialContent(blocksRef.current)),
+              );
+            } else {
+              accumulated += chunk;
+              setContent(applyCleanup(accumulated));
+            }
           },
           controller.signal,
+          (type, blockId) => {
+            if (!isBlockStream || type !== "start") return;
+            blocksRef.current[blockId] = "";
+            setActiveBlock(blockId as MaterialBlockId);
+            setContent(applyCleanup(assembleMaterialContent(blocksRef.current)));
+          },
         );
-        const cleaned = applyCleanup(accumulated);
+        setActiveBlock(null);
+        const cleaned = applyCleanup(
+          isBlockStream
+            ? assembleMaterialContent(blocksRef.current)
+            : accumulated,
+        );
         setContent(cleaned);
         setStatus("done");
         saveSnapshot(cleaned, params.settings.format);
