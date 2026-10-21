@@ -7,10 +7,13 @@ import { canGenerateMaterial } from "@/lib/lesson-directory";
 import {
   DEFAULT_SETTINGS,
   normalizeSummarySettings,
+  assembleMaterialContent,
+  splitMaterialSections,
   FEEDBACK_SENT_KEY,
   HISTORY_INDEX_KEY,
   HISTORY_KEY,
   MAX_HISTORY,
+  type MaterialBlockId,
   type RefinementType,
   type SummaryFormat,
   type SummarySettings,
@@ -48,6 +51,8 @@ export function useSummarize() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const historyIndexRef = useRef(-1);
   const abortRef = useRef<AbortController | null>(null);
+  const blocksRef = useRef<Record<string, string>>({});
+  const [activeBlock, setActiveBlock] = useState<MaterialBlockId | null>(null);
 
   useEffect(() => {
     settingsRef.current = settings;
