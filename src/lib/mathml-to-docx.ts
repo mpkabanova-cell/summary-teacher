@@ -147,15 +147,15 @@ export function latexToDocxMath(latex: string): DocxMath | null {
       throwOnError: false,
       strict: "ignore",
     });
-    const parsed = new DOMParser().parseFromString(mathml, "application/xml");
-    if (parsed.querySelector("parsererror")) return null;
-    const root = parsed.documentElement;
-    if (!root || root.localName !== "math") return null;
+    // KaTeX wraps the <math> element in a <span class="katex"> container,
+    // so parse as HTML and look the formula up inside it.
+    const parsed = new DOMParser().parseFromString(mathml, "text/html");
+    const root = parsed.querySelector("math");
+    if (!root) return null;
     const children = walkElement(root);
     if (children.length === 0) return null;
     return new DocxMath({ children });
-  } catch (e) {
-    console.error("[mathml-to-docx] conversion failed:", e);
+  } catch {
     return null;
   }
 }
