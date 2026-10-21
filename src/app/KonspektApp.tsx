@@ -14,16 +14,12 @@ import { toast, Toaster } from "sonner";
 import { FileUploadZone } from "@/components/FileUploadZone";
 import { SummarySettingsPanel } from "@/components/SummarySettingsPanel";
 import { SummaryResult } from "@/components/SummaryResult";
-import { PdfExportProgress } from "@/components/PdfExportProgress";
 import { ProcessingProgress } from "@/components/ProcessingProgress";
 import { Button } from "@/components/ui/button";
 import { useSummarize } from "@/hooks/useSummarize";
 import { canGenerateMaterial, getSelectedLesson } from "@/lib/lesson-directory";
 import { trackEvent } from "@/lib/analytics";
-import {
-  exportMarkdownToPdf,
-  type PdfExportProgress as PdfExportProgressState,
-} from "@/lib/export-pdf";
+import { exportMarkdownToDocx } from "@/lib/export-docx";
 import {
   REFINEMENT_OPTIONS,
   formatSettingsPills,
@@ -34,10 +30,7 @@ import {
 export default function Index() {
   const [editing, setEditing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(true);
-  const [pdfExport, setPdfExport] = useState<PdfExportProgressState | null>(
-    null,
-  );
-  const isExportingPdf = pdfExport !== null;
+  const [isExportingDocx, setIsExportingDocx] = useState(false);
   const previousContentRef = useRef("");
 
   const {
@@ -108,26 +101,26 @@ export default function Index() {
     }
   };
 
-  const handleExportPdf = async () => {
+  const handleExportDocx = async () => {
     if (!content.trim()) {
-      toast.error("Нет текста для PDF");
+      toast.error("Нет текста для DOCX");
       return;
     }
-    setPdfExport({ phase: "preparing", message: "Готовим PDF…" });
+    setIsExportingDocx(true);
     try {
-      await exportMarkdownToPdf(content, { onProgress: setPdfExport });
+      await exportMarkdownToDocx(content);
       trackEvent("ai_conspect_material_action", {
-        action: "export_pdf",
+        action: "export_docx",
         format: contentFormat,
         content_length: content.length,
       });
-      toast.success("PDF сохранён");
+      toast.success("DOCX сохранён");
     } catch (e) {
       toast.error(
-        e instanceof Error ? e.message : "Не удалось создать PDF",
+        e instanceof Error ? e.message : "Не удалось создать DOCX",
       );
     } finally {
-      setPdfExport(null);
+      setIsExportingDocx(false);
     }
   };
 
@@ -305,16 +298,16 @@ export default function Index() {
                 )}
                 <button
                   type="button"
-                  onClick={() => void handleExportPdf()}
-                  disabled={isBusy || isExportingPdf}
-                  className="app-chip"
+                  onClick={() => void handleExportDocx()}
+                  disabled={isBusy || isExportingDocx}
+                   className="app-chip"
                 >
-                  {isExportingPdf ? (
+                  {isExportingDocx ? (
                     <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                   ) : (
                     <Download className="h-4 w-4 shrink-0" />
                   )}
-                  {isExportingPdf ? "PDF…" : "PDF"}
+                  {isExportingDocx ? "DOCX…" : "DOCX"}
                 </button>
                 <button
                   type="button"
@@ -358,12 +351,6 @@ export default function Index() {
                   streaming={status === "streaming"}
                   format={settings.format}
                 />
-              </div>
-            )}
-
-            {pdfExport && (
-              <div className="border-b border-border/70 p-3">
-                <PdfExportProgress progress={pdfExport} />
               </div>
             )}
 
