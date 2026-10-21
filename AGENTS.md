@@ -14,7 +14,8 @@
 - The main page loads client-only (`ClientOnly` + lazy import of `src/app/KonspektApp.tsx`) because KaTeX and the DOCX generator need the browser.
 - Export produces DOCX in the browser with the `docx` package; LaTeX becomes native Word formulas (OMML) by walking KaTeX MathML output in `src/lib/mathml-to-docx.ts`. The old jsPDF/html2canvas PDF export was removed — do not reintroduce it.
 - Prebundle React renderer/runtime entry points and the lazy lesson dialog together in Vite's client optimizer to prevent dependency discovery from mixing React generations in an open preview.
-- The read-only lesson directory is bundled as structured JSON; resolve lesson numbers against that directory on both client and server so the original planning context remains authoritative without a database.
+- Lesson directories live per course in src/data/courses/<subject>-<grade>.json (server, full fields) plus a light src/data/course-index.json (client: number/title/section/concepts/dates) to keep the browser bundle small; courseId + lessonNumber are resolved on both sides.
+- Lesson type is used only internally to pick the goal emphasis (src/lib/server/lesson-goal.ts) and is never printed.
 - Lesson selection uses a dropdown with seven fixed-height visible rows and recomputes proximity to the live Moscow calendar date each time it opens; this keeps date focus and neighboring lessons consistent across screens.
 
 - The active generation flow is topic-only and uses one combined bundle format; client and API reject file-based generation to keep section roles consistent.
