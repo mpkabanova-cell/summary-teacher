@@ -154,7 +154,8 @@ export function latexToDocxMath(latex: string): DocxMath | null {
     const children = walkElement(root);
     if (children.length === 0) return null;
     return new DocxMath({ children });
-  } catch {
+  } catch (e) {
+    console.error("[mathml-to-docx] conversion failed:", e);
     return null;
   }
 }
