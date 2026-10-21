@@ -1,8 +1,8 @@
 # Tasks
-- [ ] Remove uploads from the active input and generation flow.
-- [ ] Generate all requested material sections together without duplication or diagrams.
-- [ ] Move detail, style and Wishes to post-result regeneration with medium/study defaults.
-- [ ] Test the new rules and verify generation and regeneration end to end.
+- [x] Remove uploads from the active input and generation flow.
+- [x] Generate all requested material sections together without duplication or diagrams.
+- [x] Move detail, style and Wishes to post-result regeneration with medium/study defaults.
+- [x] Test the new rules and verify generation and regeneration end to end.
 - [x] Add shared child-safety instructions for all generation and refinement modes, including realistic examples and danger responses.
 - [x] Test policy coverage and verify real generation with the current model.
 - [x] Import the uploaded lesson directory with original lesson numbers and dates.

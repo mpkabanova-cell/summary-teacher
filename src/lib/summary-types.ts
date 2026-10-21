@@ -74,6 +74,11 @@ const FORMAT_ACTION_LABELS: Record<
   SummaryFormat,
   { create: string; regenerate: string; regenerated: string }
 > = {
+  bundle: {
+    create: "Создать материалы",
+    regenerate: "Перегенерировать материалы",
+    regenerated: "Материалы перегенерированы",
+  },
   notes: {
     create: "Создать конспект",
     regenerate: "Перегенерировать конспект",
