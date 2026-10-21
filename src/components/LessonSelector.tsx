@@ -64,7 +64,7 @@ export function LessonSelector({ courseId = DEFAULT_COURSE_ID, lessonNumber, onC
               </Button>
             </PopoverTrigger>
             <PopoverContent align="start" sideOffset={6} aria-describedby={undefined}
-              className="lesson-dialog w-[min(42rem,var(--radix-popover-trigger-width))] gap-3 rounded-lg p-3"
+              className="lesson-dialog w-[var(--radix-popover-trigger-width)] min-w-0 max-w-[calc(100vw-1.5rem)] gap-3 rounded-lg p-3"
               onOpenAutoFocus={(event) => {
                 event.preventDefault();
                 const list = listRef.current;

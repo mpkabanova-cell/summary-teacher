@@ -68,7 +68,7 @@
 }
 
 @layer components {
-  .lesson-dialog { width: min(42rem, calc(100vw - 1.5rem)); max-height: calc(100dvh - 1.5rem); }
+  .lesson-dialog { width: var(--radix-popover-trigger-width); max-width: calc(100vw - 1.5rem); max-height: calc(100dvh - 1.5rem); }
   .lesson-list { height: 392px; flex-shrink: 0; }
   .lesson-row { height: 56px; min-height: 56px; }
   .app-card {
