@@ -316,7 +316,8 @@ export default function Index() {
                     content={content}
                     isBusy={isBusy}
                     activeBlock={activeBlock}
-                    onRegenerateBlock={(id) => void handleRegenerateBlock(id)}
+                    settings={settings}
+                    onRegenerateBlock={(id, options) => void handleRegenerateBlock(id, options)}
                   />
                 )}
               </div>
@@ -329,42 +330,74 @@ export default function Index() {
   );
 }
 
+interface BlockRegenOptions {
+  detail?: SummarySettings["detail"];
+  level?: SummarySettings["level"];
+  blockRequest?: string;
+}
+
 function MaterialBlocksView({
   content,
   isBusy,
   activeBlock,
+  settings,
   onRegenerateBlock,
 }: {
   content: string;
   isBusy: boolean;
   activeBlock: MaterialBlockId | null;
-  onRegenerateBlock: (id: MaterialBlockId) => void;
+  settings: SummarySettings;
+  onRegenerateBlock: (id: MaterialBlockId, options: BlockRegenOptions) => void;
 }) {
+  const [dialogBlock, setDialogBlock] = useState<MaterialBlockId | null>(null);
+  const [dialogDetail, setDialogDetail] = useState<SummarySettings["detail"]>(settings.detail);
+  const [dialogLevel, setDialogLevel] = useState<SummarySettings["level"]>(settings.level);
+  const [dialogRequest, setDialogRequest] = useState("");
+
   const sections = splitMaterialSections(content);
   if (!sections || Object.keys(sections).length < 2) {
     return <SummaryResult content={content} />;
   }
+
+  const openDialog = (id: MaterialBlockId) => {
+    setDialogDetail(settings.detail);
+    setDialogLevel(settings.level);
+    setDialogRequest("");
+    setDialogBlock(id);
+  };
+
+  const confirmDialog = () => {
+    if (!dialogBlock) return;
+    const id = dialogBlock;
+    setDialogBlock(null);
+    onRegenerateBlock(id, {
+      detail: dialogDetail,
+      level: dialogLevel,
+      blockRequest: dialogRequest,
+    });
+  };
+
+  const dialogTitle = dialogBlock
+    ? (MATERIAL_SECTIONS.find((s) => s.id === dialogBlock)?.title ?? "")
+    : "";
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {MATERIAL_BLOCK_ORDER.filter((id) => sections[id] !== undefined).map((id) => {
         const section = MATERIAL_SECTIONS.find((s) => s.id === id)!;
         const body = sections[id] ?? "";
         const isActive = activeBlock === id;
         return (
-          <section key={id}>
-            <h2 className="mb-2 text-lg font-semibold">{section.title}</h2>
-            {body.trim() ? (
-              <article className="summary-content prose-sm max-w-none">
-                <MarkdownView markdown={preprocessSummaryContent(body)} />
-              </article>
-            ) : isActive ? (
-              <p className="text-sm text-muted-foreground">Создаём…</p>
-            ) : null}
-            <div className="mt-2">
+          <section
+            key={id}
+            className={`rounded-xl border bg-card p-4 shadow-sm sm:p-5 ${isActive ? "border-primary/60 ring-1 ring-primary/30" : "border-border"}`}
+          >
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold">{section.title}</h2>
               <Button
                 type="button"
                 size="sm"
-                onClick={() => onRegenerateBlock(id)}
+                onClick={() => openDialog(id)}
                 disabled={isBusy || !body.trim()}
                 className="rounded-lg border border-border bg-secondary text-secondary-foreground hover:bg-muted"
               >
@@ -373,12 +406,59 @@ function MaterialBlocksView({
                 ) : (
                   <RefreshCw className="h-4 w-4 shrink-0" />
                 )}
-                Перегенерировать блок
+                Перегенерировать
               </Button>
             </div>
+            {body.trim() ? (
+              <article className="summary-content prose-sm max-w-none">
+                <MarkdownView markdown={preprocessSummaryContent(body)} />
+              </article>
+            ) : isActive ? (
+              <p className="text-sm text-muted-foreground">Создаём…</p>
+            ) : null}
           </section>
         );
       })}
+
+      <Dialog open={dialogBlock !== null} onOpenChange={(open) => { if (!open) setDialogBlock(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Перегенерировать: {dialogTitle}</DialogTitle>
+            <DialogDescription>
+              Измените детализацию, стиль или опишите, что исправить в этом блоке. Остальные блоки не изменятся.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Детализация</p>
+              <ToggleGroup options={DETAIL_OPTIONS} value={dialogDetail} onChange={setDialogDetail} columns={3} />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Стиль объяснения</p>
+              <ToggleGroup options={LEVEL_OPTIONS} value={dialogLevel} onChange={setDialogLevel} itemClassName="min-w-0 flex-1 whitespace-normal" />
+            </div>
+            <label className="block space-y-2 text-xs font-medium text-muted-foreground">
+              <span>Что исправить (необязательно)</span>
+              <Textarea
+                aria-label="Что исправить"
+                placeholder="Например: добавь больше примеров с отрицательными числами…"
+                value={dialogRequest}
+                onChange={(e) => setDialogRequest(e.target.value)}
+                rows={3}
+              />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDialogBlock(null)}>
+              Отмена
+            </Button>
+            <Button type="button" onClick={confirmDialog} disabled={isBusy}>
+              <RefreshCw className="h-4 w-4 shrink-0" />
+              Перегенерировать
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
