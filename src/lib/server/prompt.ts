@@ -330,14 +330,17 @@ export function buildGenerationUserMessage(
   existingContent?: string,
   refinement?: string,
 ): string {
+  const userFocus = settings.focus?.trim()
+    ? `\n\nПожелание пользователя: ${JSON.stringify(settings.focus)}. Сначала оцени его безопасность. При описании реальной опасности для ребёнка ответь только предупреждением, последствиями и рекомендацией немедленно обратиться к взрослому/112; не генерируй учебный материал. В остальных случаях соблюдай блок детской безопасности и заменяй некорректные сюжеты нейтральными.`
+    : "";
   if (existingContent && refinement) {
-    return `Существующий материал:\n\n${existingContent}\n\nОбработай его строго согласно инструкции уточнения "${refinement}" и сохрани формат "${settings.format}".`;
+    return `Существующий материал:\n\n${existingContent}\n\nОбработай его строго согласно инструкции уточнения "${refinement}" и сохрани формат "${settings.format}".${userFocus}`;
   }
 
   const lesson = getSelectedLesson(settings.lessonNumber);
-  if (lesson) return `Создай материал в формате «${settings.format}» по уроку № ${lesson.number}: «${lesson.title}». Предмет: ${SUBJECT}, класс: ${GRADE}. Опирайся на цель и понятия урока, школьную программу РФ и выбранный уровень объяснения. Если приложены страницы, используй их как дополнительные материалы по этой теме.`;
+  if (lesson) return `Создай материал в формате «${settings.format}» по уроку № ${lesson.number}: «${lesson.title}». Предмет: ${SUBJECT}, класс: ${GRADE}. Опирайся на цель и понятия урока, школьную программу РФ и выбранный уровень объяснения. Если приложены страницы, используй их как дополнительные материалы по этой теме.${userFocus}`;
 
   return (
-    GENERATION_USER_MESSAGES[settings.format] ?? GENERATION_USER_MESSAGES.notes
+    (GENERATION_USER_MESSAGES[settings.format] ?? GENERATION_USER_MESSAGES.notes) + userFocus
   );
 }
