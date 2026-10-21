@@ -7,12 +7,11 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MODEL = "google/gemini-3.1-flash-lite";
 const CONNECT_TIMEOUT_MS = 30_000;
 const TOTAL_TIMEOUT_MS = 180_000;
-const MAX_IMAGES = 40;
 
 const requestSchema = z.object({
-  images: z.array(z.string().max(6_000_000)).max(MAX_IMAGES).optional(),
+  images: z.array(z.never()).max(0).optional(),
   settings: z.object({
-    format: z.enum(["notes", "cheatsheet", "table", "qa"]),
+    format: z.literal("bundle"),
     detail: z.enum(["brief", "medium", "detailed"]),
     level: z.enum(["simple", "study", "deep"]),
     focus: z.string().max(2000),
@@ -48,14 +47,9 @@ export const Route = createFileRoute("/api/public/summarize")({
                 controller.close();
                 return;
               }
-              const { images, settings, existingContent, refinement } = body;
-              if (!canGenerateMaterial(images?.length ?? 0, settings.lessonNumber) && !existingContent) {
-                send({ error: "Выберите тему урока или загрузите страницы" });
-                controller.close();
-                return;
-              }
-              if ((images?.length ?? 0) > MAX_IMAGES) {
-                send({ error: `Слишком много страниц (максимум ${MAX_IMAGES})` });
+              const { settings, existingContent, refinement } = body;
+              if (!canGenerateMaterial(0, settings.lessonNumber)) {
+                send({ error: "Выберите тему урока" });
                 controller.close();
                 return;
               }
@@ -63,7 +57,7 @@ export const Route = createFileRoute("/api/public/summarize")({
 
               const systemPrompt = buildSystemPrompt(
                 settings,
-                images?.length ?? 0,
+                0,
                 refinement,
                 existingContent,
               );
@@ -72,7 +66,6 @@ export const Route = createFileRoute("/api/public/summarize")({
                   type: "text",
                   text: buildGenerationUserMessage(settings, existingContent, refinement),
                 },
-                ...(images ?? []).map((url) => ({ type: "image_url", image_url: { url } })),
               ];
 
               const started = Date.now();
@@ -142,7 +135,7 @@ export const Route = createFileRoute("/api/public/summarize")({
               const message = e instanceof Error ? e.message : "Ошибка генерации";
               send({
                 error: /abort/i.test(message)
-                  ? "Не удалось дождаться ответа AI. Попробуйте включить сильное сжатие, уменьшить число страниц или убрать тяжёлые цветные изображения."
+                  ? "Не удалось дождаться ответа AI. Повторите запрос позже."
                   : message,
               });
               controller.close();

@@ -27,7 +27,7 @@ describe("Child safety policy", () => {
   it("does not permit fractional people or animals", () => {
     expect(CHILD_SAFETY_POLICY.allowFractionalPeopleOrAnimals).toBe(false);
   });
-  it.each(["notes", "cheatsheet", "table", "qa"])("prioritizes safety in %s with and without files", (format) => {
+  it.each(["bundle", "notes", "cheatsheet", "table", "qa"])("prioritizes safety in %s with and without files", (format) => {
     for (const lessonNumber of [undefined, 40]) {
       const settings = { ...DEFAULT_SETTINGS, format, ...(lessonNumber ? { lessonNumber } : {}) };
       expect(buildSystemPrompt(settings, lessonNumber ? 0 : 1).startsWith(buildChildSafetyPrompt())).toBe(true);

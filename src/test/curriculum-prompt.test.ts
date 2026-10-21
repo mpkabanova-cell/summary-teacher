@@ -8,7 +8,7 @@ describe("Curriculum generation source rules", () => {
     expect(prompt).toContain("6 класс, урок № 38");
     expect(prompt).toContain("Сравнение и упорядочивание дробей. Сложение и вычитание обыкновенных дробей");
     expect(prompt).toContain("федеральной рабочей программой");
-    expect(prompt).toContain("Файл необязателен");
+    expect(prompt).toContain("только предмет, класс и тема");
     expect(prompt).not.toContain("Используй только информацию, которую можно увидеть");
     expect(buildGenerationUserMessage({ ...DEFAULT_SETTINGS, lessonNumber: 38 })).toContain("уроку № 38");
   });
