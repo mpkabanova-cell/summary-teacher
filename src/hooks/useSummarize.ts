@@ -150,7 +150,7 @@ export function useSummarize() {
   );
 
   const generate = useCallback(async () => {
-    if (!canGenerateMaterial(0, settingsRef.current.lessonNumber)) {
+    if (!canGenerateMaterial(0, settingsRef.current.lessonNumber, settingsRef.current.courseId)) {
       throw new Error("Выберите тему урока");
     }
     const activeSettings = settingsRef.current;
@@ -183,7 +183,7 @@ export function useSummarize() {
   );
 
   const regenerate = useCallback(async () => {
-    if (!canGenerateMaterial(0, settingsRef.current.lessonNumber)) {
+    if (!canGenerateMaterial(0, settingsRef.current.lessonNumber, settingsRef.current.courseId)) {
       throw new Error("Выберите тему урока");
     }
     const activeSettings = settingsRef.current;

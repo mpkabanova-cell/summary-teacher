@@ -3,35 +3,52 @@ import { BookOpen, Check, ChevronDown, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { LESSONS, SUBJECT, GRADE, getSelectedLesson, nearestLessonIndex, searchLessons } from "@/lib/lesson-directory";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DEFAULT_COURSE_ID, SUBJECTS, findCourse, getCourse, getSelectedLesson, gradesForSubject, nearestLessonIndex, searchLessons } from "@/lib/lesson-directory";
 
-export function LessonSelector({ lessonNumber, onChange, disabled }: {
-  lessonNumber?: number | undefined; onChange: (number?: number) => void; disabled: boolean;
+export function LessonSelector({ courseId = DEFAULT_COURSE_ID, lessonNumber, onChange, onCourseChange, disabled }: {
+  courseId?: string | undefined; lessonNumber?: number | undefined; onChange: (number?: number) => void;
+  onCourseChange: (courseId: string) => void; disabled: boolean;
 }) {
+  const course = getCourse(courseId) ?? getCourse()!;
+  const lessons = course.lessons;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [nearestIndex, setNearestIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
-  const selected = getSelectedLesson(lessonNumber);
-  const results = searchLessons(query);
-  const closest = LESSONS[nearestIndex];
+  const selected = getSelectedLesson(lessonNumber, course.id);
+  const results = searchLessons(query, course.id);
+  const closest = lessons[nearestIndex];
 
   function changeOpen(next: boolean) {
     setOpen(next);
-    if (next) { setQuery(""); setNearestIndex(nearestLessonIndex(LESSONS)); }
+    if (next) { setQuery(""); setNearestIndex(nearestLessonIndex(lessons)); }
   }
 
   return (
     <div className="space-y-3 border-b border-border pb-4">
       <div className="grid grid-cols-[minmax(0,1fr)_100px] gap-3">
-        <label className="space-y-1 text-xs font-medium text-muted-foreground">
+        <div className="space-y-1 text-xs font-medium text-muted-foreground">
           <span>Предмет</span>
-          <Input value={SUBJECT} readOnly aria-label="Предмет" className="h-9" />
-        </label>
-        <label className="space-y-1 text-xs font-medium text-muted-foreground">
+          <Select value={course.subject} disabled={disabled} onValueChange={(subject) => {
+            const grades = gradesForSubject(subject);
+            const next = findCourse(subject, grades.includes(course.grade) ? course.grade : grades[0]!);
+            if (next) onCourseChange(next.id);
+          }}>
+            <SelectTrigger aria-label="Предмет" className="h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>{SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1 text-xs font-medium text-muted-foreground">
           <span>Класс</span>
-          <Input value={GRADE} readOnly aria-label="Класс" className="h-9" />
-        </label>
+          <Select value={String(course.grade)} disabled={disabled} onValueChange={(grade) => {
+            const next = findCourse(course.subject, Number(grade));
+            if (next) onCourseChange(next.id);
+          }}>
+            <SelectTrigger aria-label="Класс" className="h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>{gradesForSubject(course.subject).map((g) => <SelectItem key={g} value={String(g)}>{g}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
       </div>
       <div className="space-y-1">
         <p className="text-xs font-medium text-muted-foreground">Тема урока</p>
@@ -62,7 +79,7 @@ export function LessonSelector({ lessonNumber, onChange, disabled }: {
                   onChange={(event) => { setQuery(event.target.value); if (listRef.current) listRef.current.scrollTop = 0; }} className="pl-9" />
               </div>
               <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                <span>{query ? `Найдено: ${results.length}` : `170 уроков · 2026–2027`}</span>
+                <span>{query ? `Найдено: ${results.length}` : `${lessons.length} уроков · 2026–2027`}</span>
                 {!query && closest && <span>Ближайший: № {closest.number}</span>}
               </div>
               <div ref={listRef} className="lesson-list overflow-y-auto rounded-md border border-border" role="group" aria-label="Темы уроков">

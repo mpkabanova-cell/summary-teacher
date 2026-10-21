@@ -12,6 +12,7 @@ export interface SummarySettings {
   level: ExplanationLevel;
   focus: string;
   lessonNumber?: number | undefined;
+  courseId?: string | undefined;
 }
 
 export const FORMAT_OPTIONS: {

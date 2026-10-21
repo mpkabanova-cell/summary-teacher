@@ -15,7 +15,7 @@ import { SummaryResult } from "@/components/SummaryResult";
 import { ProcessingProgress } from "@/components/ProcessingProgress";
 import { Button } from "@/components/ui/button";
 import { useSummarize } from "@/hooks/useSummarize";
-import { canGenerateMaterial, getSelectedLesson } from "@/lib/lesson-directory";
+import { canGenerateMaterial, getCourse, getSelectedLesson } from "@/lib/lesson-directory";
 import { trackEvent } from "@/lib/analytics";
 import { exportMarkdownToDocx } from "@/lib/export-docx";
 import {
@@ -46,8 +46,9 @@ export default function Index() {
   } = useSummarize();
 
   const settingPills = formatSettingsPills(settings);
-  const selectedLesson = getSelectedLesson(settings.lessonNumber);
-  if (selectedLesson) settingPills.unshift(`Математика · 6 класс · № ${selectedLesson.number}`);
+  const selectedCourse = getCourse(settings.courseId);
+  const selectedLesson = getSelectedLesson(settings.lessonNumber, settings.courseId);
+  if (selectedLesson && selectedCourse) settingPills.unshift(`${selectedCourse.subject} · ${selectedCourse.grade} класс · № ${selectedLesson.number}`);
 
   useEffect(() => {
     const previous = previousContentRef.current;
@@ -63,7 +64,7 @@ export default function Index() {
   }, [content, isBusy]);
 
   const handleGenerate = async () => {
-    if (!canGenerateMaterial(0, settings.lessonNumber)) {
+    if (!canGenerateMaterial(0, settings.lessonNumber, settings.courseId)) {
       toast.error("Выберите тему урока");
       return;
     }

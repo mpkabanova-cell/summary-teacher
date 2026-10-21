@@ -19,7 +19,9 @@ export function SummarySettingsPanel({ settings, onSettingsChange, onGenerate, h
     onSettingsChange({ ...settings, [key]: value });
   return (
     <div className="space-y-4">
-      <LessonSelector lessonNumber={settings.lessonNumber} onChange={(number) => update("lessonNumber", number)} disabled={isBusy} />
+      <LessonSelector courseId={settings.courseId} lessonNumber={settings.lessonNumber}
+        onCourseChange={(courseId) => onSettingsChange({ ...settings, courseId, lessonNumber: undefined })}
+        onChange={(number) => update("lessonNumber", number)} disabled={isBusy} />
       {hasContent && (
         <>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -38,7 +40,7 @@ export function SummarySettingsPanel({ settings, onSettingsChange, onGenerate, h
           </label>
         </>
       )}
-      <Button className="h-11 w-full sm:w-auto" onClick={onGenerate} disabled={!canGenerateMaterial(0, settings.lessonNumber) || isBusy}>
+      <Button className="h-11 w-full sm:w-auto" onClick={onGenerate} disabled={!canGenerateMaterial(0, settings.lessonNumber, settings.courseId) || isBusy}>
         <Sparkles className="h-4 w-4" />
         {hasContent ? "Перегенерировать материалы" : "Создать материалы"}
       </Button>
