@@ -1,7 +1,3 @@
-import {
-  buildSupabaseHeaders,
-  getSupabaseConfig,
-} from "@/integrations/supabase/client";
 import type { SummarizeRequest } from "@/lib/summary-types";
 
 export interface StreamChunk {
@@ -10,59 +6,21 @@ export interface StreamChunk {
   done?: boolean;
 }
 
-type EdgeFunctionName = "summarize" | "feedback-proxy";
+type EdgeFunctionName = "summarize" | "feedback";
 
-function getFunctionUrl(functionName: EdgeFunctionName): string {
-  const { url, configured, configError } = getSupabaseConfig();
-  if (!configured) {
-    throw new Error(
-      configError ??
-        "Supabase не настроен. Укажите VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY.",
-    );
-  }
-
-  if (!import.meta.env.DEV) {
-    return functionName === "feedback-proxy"
-      ? "/api/feedback"
-      : `/api/${functionName}`;
-  }
-
-  return `${url}/functions/v1/${functionName}`;
+function buildSupabaseHeaders(): Headers {
+  const headers = new Headers();
+  headers.set("Content-Type", "application/json");
+  return headers;
 }
 
 async function fetchEdgeFunction(
   functionName: EdgeFunctionName,
   init: RequestInit,
 ): Promise<Response> {
-  const directUrl = (() => {
-    const { url, configured } = getSupabaseConfig();
-    if (!configured) return null;
-    return `${url}/functions/v1/${functionName}`;
-  })();
-
-  const primaryUrl = getFunctionUrl(functionName);
-
   try {
-    const response = await fetch(primaryUrl, init);
-    if (response.ok || !directUrl || primaryUrl === directUrl) {
-      return response;
-    }
-
-    // Same-origin proxy can fail on Render; fall back to direct Supabase call.
-    if (response.status >= 500 || response.status === 404) {
-      return fetch(directUrl, init);
-    }
-
-    return response;
+    return await fetch(`/api/public/${functionName}`, init);
   } catch (error) {
-    if (directUrl && primaryUrl !== directUrl) {
-      try {
-        return await fetch(directUrl, init);
-      } catch {
-        // Fall through to the shared network error below.
-      }
-    }
-
     throw toNetworkError(error);
   }
 }
@@ -72,7 +30,7 @@ function toNetworkError(error: unknown): Error {
   if (/failed to fetch|networkerror|load failed/i.test(message)) {
     return new Error(
       "Не удалось подключиться к серверу генерации. " +
-        "Проверьте интернет, что проект Supabase не на паузе, и попробуйте снова.",
+        "Проверьте интернет и попробуйте снова.",
     );
   }
   return error instanceof Error ? error : new Error(message);
@@ -82,8 +40,7 @@ function formatHttpError(status: number, body: string): string {
   if (status === 502 || status === 503 || status === 504) {
     return (
       "Сервер генерации временно недоступен. " +
-      "Если ошибка повторяется, проверьте в Supabase Dashboard, что проект не на паузе, " +
-      "и попробуйте снова через пару минут."
+      "Попробуйте снова через пару минут."
     );
   }
   return body || `Ошибка сервера: ${status}`;
@@ -115,7 +72,7 @@ export async function invokeSummarizeStream(
     const preview = (await response.clone().text()).slice(0, 200);
     throw new Error(
       preview ||
-        "Сервер вернул непотоковый ответ. Проверьте, что проект Supabase активен.",
+        "Сервер вернул непотоковый ответ.",
     );
   }
 
@@ -159,10 +116,7 @@ export async function sendFeedback(payload: {
   rating: number;
   message: string;
 }): Promise<void> {
-  const { configured } = getSupabaseConfig();
-  if (!configured) return;
-
-  const response = await fetchEdgeFunction("feedback-proxy", {
+  const response = await fetchEdgeFunction("feedback", {
     method: "POST",
     headers: buildSupabaseHeaders(),
     body: JSON.stringify(payload),
