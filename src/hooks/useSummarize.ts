@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invokeSummarizeStream } from "@/lib/edgeInvoke";
 import { trackEvent } from "@/lib/analytics";
 import { cleanSummaryContent } from "@/lib/summary-cleanup";
-import { canGenerateMaterial } from "@/lib/lesson-directory";
+import { canGenerateMaterial, getSelectedLesson } from "@/lib/lesson-directory";
 import {
   DEFAULT_SETTINGS,
   normalizeSummarySettings,
@@ -53,6 +53,9 @@ export function useSummarize() {
   const abortRef = useRef<AbortController | null>(null);
   const blocksRef = useRef<Record<string, string>>({});
   const [activeBlock, setActiveBlock] = useState<MaterialBlockId | null>(null);
+
+  const currentTopic = () =>
+    getSelectedLesson(settingsRef.current.lessonNumber, settingsRef.current.courseId)?.title;
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -136,7 +139,7 @@ export function useSummarize() {
               blocksRef.current[blockId] =
                 (blocksRef.current[blockId] ?? "") + chunk;
               setContent(
-                applyCleanup(assembleMaterialContent(blocksRef.current)),
+                applyCleanup(assembleMaterialContent(blocksRef.current, currentTopic())),
               );
             } else {
               accumulated += chunk;
@@ -148,13 +151,13 @@ export function useSummarize() {
             if (!isBlockStream || type !== "start") return;
             blocksRef.current[blockId] = "";
             setActiveBlock(blockId as MaterialBlockId);
-            setContent(applyCleanup(assembleMaterialContent(blocksRef.current)));
+            setContent(applyCleanup(assembleMaterialContent(blocksRef.current, currentTopic())));
           },
         );
         setActiveBlock(null);
         const cleaned = applyCleanup(
           isBlockStream
-            ? assembleMaterialContent(blocksRef.current)
+            ? assembleMaterialContent(blocksRef.current, currentTopic())
             : accumulated,
         );
         setContent(cleaned);
