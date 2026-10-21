@@ -212,6 +212,7 @@ export function buildSystemPrompt(
   refinement?: string,
   existingContent?: string,
 ): string {
+  if (settings.format === "bundle") return buildBlockSystemPrompt(settings, "notes");
   const isQuestionsOnly = settings.format === "qa";
   const lesson = getLessonDetails(settings.lessonNumber, settings.courseId);
   const course = getCourse(settings.courseId);
@@ -364,6 +365,8 @@ export function buildGenerationUserMessage(
   if (existingContent && refinement) {
     return `Существующий материал:\n\n${existingContent}\n\nОбработай его строго согласно инструкции уточнения "${refinement}" и сохрани формат "${settings.format}".${userFocus}`;
   }
+  if (settings.format === "bundle") return buildBlockUserMessage(settings, "notes");
+
 
   const lesson = getLessonDetails(settings.lessonNumber, settings.courseId);
   const course = getCourse(settings.courseId);
