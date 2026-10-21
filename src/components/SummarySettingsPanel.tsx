@@ -36,11 +36,11 @@ export function SummarySettingsPanel({ settings, onSettingsChange, onGenerate, h
           </div>
           <label className="block space-y-2 text-xs font-medium text-muted-foreground">
             <span>Пожелания (необязательно)</span>
-            <Input aria-label="Пожелания" placeholder="Больше задач на сравнение дробей…" value={settings.focus} onChange={(e) => update("focus", e.target.value)} disabled={isBusy} className="h-11" />
+            <Input aria-label="Пожелания" placeholder="Больше задач на сравнение дробей…" value={settings.focus} onChange={(e) => update("focus", e.target.value)} disabled={isBusy} className="h-11 bg-card text-foreground" />
           </label>
         </>
       )}
-      <Button className="h-11 w-full sm:w-auto" onClick={onGenerate} disabled={!canGenerateMaterial(0, settings.lessonNumber, settings.courseId) || isBusy}>
+      <Button className="h-11 w-auto" onClick={onGenerate} disabled={!canGenerateMaterial(0, settings.lessonNumber, settings.courseId) || isBusy}>
         <Sparkles className="h-4 w-4" />
         {hasContent ? "Перегенерировать материалы" : "Создать материалы"}
       </Button>
