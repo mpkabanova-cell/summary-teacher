@@ -55,7 +55,7 @@ export const Route = createFileRoute("/api/public/summarize")({
                 controller.close();
                 return;
               }
-              const { settings, block, existingBlocks } = body;
+              const { settings, block, existingBlocks, blockRequest } = body;
               if (!canGenerateMaterial(0, settings.lessonNumber, settings.courseId)) {
                 send({ error: "Выберите тему урока" });
                 controller.close();
@@ -69,6 +69,7 @@ export const Route = createFileRoute("/api/public/summarize")({
               const generateBlock = async (
                 blockId: string,
                 contextBlocks: Record<string, string>,
+                fixRequest?: string,
               ): Promise<string> => {
                 send({ blockStart: blockId });
                 const abort = new AbortController();
@@ -93,7 +94,7 @@ export const Route = createFileRoute("/api/public/summarize")({
                         content: [
                           {
                             type: "text",
-                            text: buildBlockUserMessage(settings, blockId, contextBlocks),
+                            text: buildBlockUserMessage(settings, blockId, contextBlocks, fixRequest),
                           },
                         ],
                       },
@@ -149,7 +150,7 @@ export const Route = createFileRoute("/api/public/summarize")({
                 for (const [id, text] of Object.entries(existingBlocks ?? {})) {
                   if (id !== block && text) context[id] = text;
                 }
-                await generateBlock(block, context);
+                await generateBlock(block, context, blockRequest?.trim() || undefined);
               } else {
                 // Полный комплект: конспект → памятка → повторение → пример ДЗ,
                 // каждый следующий блок получает предыдущие как контекст.
