@@ -21,3 +21,21 @@ describe("Curriculum generation source rules", () => {
     expect(prompt).not.toContain("только в пределах исходных страниц");
   });
 });
+
+describe("Format-specific output rules", () => {
+  it("outputs the lesson objective only in notes mode", () => {
+    const notes = buildSystemPrompt({ ...DEFAULT_SETTINGS, format: "notes", lessonNumber: 38 }, 0);
+    expect(notes).toContain("раздел «Цель урока»");
+    for (const format of ["cheatsheet", "table", "qa"]) {
+      const prompt = buildSystemPrompt({ ...DEFAULT_SETTINGS, format, lessonNumber: 38 }, 0);
+      expect(prompt).toContain("Не выводи цель урока");
+    }
+  });
+  it("adds a suggested answers section in questions mode", () => {
+    const prompt = buildSystemPrompt({ ...DEFAULT_SETTINGS, format: "qa", lessonNumber: 38 }, 0);
+    expect(prompt).toContain("## Предположительные ответы");
+    expect(prompt).toContain("В списке вопросов — только вопросы, без ответов");
+    expect(buildGenerationUserMessage({ ...DEFAULT_SETTINGS, format: "qa", lessonNumber: 38 })).toBeTruthy();
+    expect(buildGenerationUserMessage({ ...DEFAULT_SETTINGS, format: "qa" })).toContain("Предположительные ответы");
+  });
+});
