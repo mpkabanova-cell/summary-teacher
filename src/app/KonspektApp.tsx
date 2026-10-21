@@ -5,7 +5,6 @@ import {
   Download,
   Loader2,
   Pencil,
-  RefreshCw,
   Sparkles,
   Square,
   Trash2,
@@ -173,15 +172,6 @@ export default function Index() {
           <div className="flex items-center gap-2 overflow-x-auto">
             {hasContent ? (
               <>
-                <Button
-                  type="button"
-                    disabled={isBusy || !canGenerateMaterial(0, settings.lessonNumber)}
-                  onClick={() => setSettingsOpen(true)}
-                  className="rounded-lg border border-border bg-secondary text-secondary-foreground hover:bg-muted"
-                >
-                  <RefreshCw className="h-4 w-4 shrink-0" />
-                  Перегенерировать
-                </Button>
                 {!editing && (
                   <Button
                     type="button"
