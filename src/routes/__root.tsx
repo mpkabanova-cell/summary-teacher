@@ -78,22 +78,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Конспект — AI-помощник для учебников" },
+      { name: "description", content: "AI-конспекты страниц учебников из фото и PDF." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: "https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
+    scripts: [{ children: ANALYTICS_SNIPPET }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -101,9 +101,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+const ANALYTICS_SNIPPET = `
+(function (m, e, t, r, i, k, a) {
+  m[i] = m[i] || function () { (m[i].a = m[i].a || []).push(arguments); };
+  m[i].l = 1 * new Date();
+  for (var j = 0; j < document.scripts.length; j++) { if (document.scripts[j].src === r) { return; } }
+  k = e.createElement(t); a = e.getElementsByTagName(t)[0]; k.async = 1; k.src = r; a.parentNode.insertBefore(k, a);
+})(window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=108472990", "ym");
+window.dataLayer = window.dataLayer || [];
+ym(108472990, "init", { ssr: true, webvisor: true, clickmap: true, ecommerce: "dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce: true, trackLinks: true });
+(function (w, d, u, h, s) {
+  w._uxsSettings = { id: "nqn3hkbdzgrmumcqls7y36k1" };
+  h = d.getElementsByTagName("head")[0]; s = d.createElement("script"); s.async = 1; s.src = u; h.appendChild(s);
+})(window, document, "https://cdn.uxfeedback.ru/widget.js");
+`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ru">
       <head>
         <HeadContent />
       </head>
