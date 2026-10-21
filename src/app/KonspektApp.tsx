@@ -15,6 +15,9 @@ import { SummarySettingsPanel } from "@/components/SummarySettingsPanel";
 import { SummaryResult } from "@/components/SummaryResult";
 import { ProcessingProgress } from "@/components/ProcessingProgress";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup } from "@/components/ui/toggle-group";
 import { useSummarize } from "@/hooks/useSummarize";
 import { canGenerateMaterial, getCourse, getSelectedLesson } from "@/lib/lesson-directory";
 import { trackEvent } from "@/lib/analytics";
@@ -27,7 +30,10 @@ import {
   splitMaterialSections,
   MATERIAL_BLOCK_ORDER,
   MATERIAL_SECTIONS,
+  DETAIL_OPTIONS,
+  LEVEL_OPTIONS,
   type MaterialBlockId,
+  type SummarySettings,
 } from "@/lib/summary-types";
 
 export default function Index() {
