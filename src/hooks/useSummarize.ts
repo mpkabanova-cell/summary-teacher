@@ -170,6 +170,7 @@ export function useSummarize() {
           });
         }
       } catch (e) {
+        setActiveBlock(null);
         if ((e as Error).name === "AbortError") return;
         setStatus("error");
         setError(e instanceof Error ? e.message : "Неизвестная ошибка");
@@ -184,6 +185,7 @@ export function useSummarize() {
       throw new Error("Выберите тему урока");
     }
     const activeSettings = settingsRef.current;
+    blocksRef.current = {};
     setContent("");
     setActiveContentFormat(activeSettings.format);
     await runStream({ settings: activeSettings });
@@ -217,10 +219,34 @@ export function useSummarize() {
       throw new Error("Выберите тему урока");
     }
     const activeSettings = settingsRef.current;
+    blocksRef.current = {};
     setContent("");
     setActiveContentFormat(activeSettings.format);
     await runStream({ settings: activeSettings });
   }, [runStream, setActiveContentFormat]);
+
+  const regenerateBlock = useCallback(
+    async (blockId: MaterialBlockId) => {
+      if (!canGenerateMaterial(0, settingsRef.current.lessonNumber, settingsRef.current.courseId)) {
+        throw new Error("Выберите тему урока");
+      }
+      const sections = splitMaterialSections(content);
+      if (!sections) {
+        throw new Error("Не удалось определить блоки материала");
+      }
+      const activeSettings = settingsRef.current;
+      blocksRef.current = { ...sections };
+      const existingBlocks = Object.fromEntries(
+        Object.entries(sections).filter(([id]) => id !== blockId),
+      );
+      await runStream({
+        settings: activeSettings,
+        block: blockId,
+        existingBlocks,
+      });
+    },
+    [content, runStream],
+  );
 
   const resetContent = useCallback(() => {
     abortRef.current?.abort();
@@ -293,6 +319,8 @@ export function useSummarize() {
     error,
     generate,
     regenerate,
+    regenerateBlock,
+    activeBlock,
     refine,
     resetContent,
     cancel,
