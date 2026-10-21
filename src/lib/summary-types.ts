@@ -222,10 +222,22 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function stripOwnHeading(text: string, title: string): string {
-  return text
-    .replace(new RegExp(`^\\s*#{1,4}\\s*${escapeRegExp(title)}\\s*\\n?`, "i"), "")
-    .trim();
+function normalizeHeading(text: string): string {
+  return text.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/** Убирает заголовки-дубли в начале блока: название раздела и название темы урока. */
+function stripOwnHeading(text: string, title: string, topic?: string): string {
+  let result = text.trim();
+  const banned = new Set([normalizeHeading(title)]);
+  if (topic?.trim()) banned.add(normalizeHeading(topic));
+  const leading = /^#{1,4}\s+(.+?)\s*#*\s*\n?/;
+  for (let i = 0; i < 2; i++) {
+    const match = result.match(leading);
+    if (!match || !banned.has(normalizeHeading(match[1] ?? ""))) break;
+    result = result.slice(match[0].length).trim();
+  }
+  return result;
 }
 
 /** Собирает комплект из блоков в каноническом порядке с заголовками разделов. */
