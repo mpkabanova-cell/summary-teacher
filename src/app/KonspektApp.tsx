@@ -396,7 +396,6 @@ function MaterialBlocksView({
               <h2 className="text-lg font-semibold">{section.title}</h2>
               <Button
                 type="button"
-                size="sm"
                 onClick={() => openDialog(id)}
                 disabled={isBusy || !body.trim()}
                 className="rounded-lg border border-border bg-secondary text-secondary-foreground hover:bg-muted"
