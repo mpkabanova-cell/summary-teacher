@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { buildGenerationUserMessage, buildSystemPrompt } from "@/lib/server/prompt";
+import { z } from "zod";
+import { canGenerateMaterial } from "@/lib/lesson-directory";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
@@ -7,12 +9,18 @@ const CONNECT_TIMEOUT_MS = 30_000;
 const TOTAL_TIMEOUT_MS = 180_000;
 const MAX_IMAGES = 40;
 
-interface RequestBody {
-  images?: string[];
-  settings: { format: string; detail: string; level: string; focus: string };
-  existingContent?: string;
-  refinement?: string;
-}
+const requestSchema = z.object({
+  images: z.array(z.string().max(6_000_000)).max(MAX_IMAGES).optional(),
+  settings: z.object({
+    format: z.enum(["notes", "cheatsheet", "table", "qa"]),
+    detail: z.enum(["brief", "medium", "detailed"]),
+    level: z.enum(["simple", "study", "deep"]),
+    focus: z.string().max(2000),
+    lessonNumber: z.number().int().min(1).max(170).optional(),
+  }),
+  existingContent: z.string().max(200_000).optional(),
+  refinement: z.enum(["shorter", "examples", "simpler", "quiz"]).optional(),
+});
 
 export const Route = createFileRoute("/api/public/summarize")({
   server: {
@@ -32,17 +40,17 @@ export const Route = createFileRoute("/api/public/summarize")({
             send({ status: "connected" });
 
             try {
-              let body: RequestBody;
+              let body: z.infer<typeof requestSchema>;
               try {
-                body = await request.json();
+                body = requestSchema.parse(await request.json());
               } catch {
-                send({ error: "Invalid JSON" });
+                send({ error: "Некорректные параметры запроса" });
                 controller.close();
                 return;
               }
               const { images, settings, existingContent, refinement } = body;
-              if (!images?.length && !existingContent) {
-                send({ error: "Нет изображений" });
+              if (!canGenerateMaterial(images?.length ?? 0, settings.lessonNumber) && !existingContent) {
+                send({ error: "Выберите тему урока или загрузите страницы" });
                 controller.close();
                 return;
               }

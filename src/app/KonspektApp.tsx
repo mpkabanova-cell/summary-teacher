@@ -18,6 +18,7 @@ import { PdfExportProgress } from "@/components/PdfExportProgress";
 import { ProcessingProgress } from "@/components/ProcessingProgress";
 import { Button } from "@/components/ui/button";
 import { useSummarize } from "@/hooks/useSummarize";
+import { canGenerateMaterial, getSelectedLesson } from "@/lib/lesson-directory";
 import { trackEvent } from "@/lib/analytics";
 import {
   exportMarkdownToPdf,
@@ -26,7 +27,6 @@ import {
 import {
   REFINEMENT_OPTIONS,
   formatSettingsPills,
-  getGenerateActionLabel,
   getRefinementAvailability,
   getRegeneratedMessage,
 } from "@/lib/summary-types";
@@ -60,6 +60,8 @@ export default function Index() {
   } = useSummarize();
 
   const settingPills = formatSettingsPills(settings);
+  const selectedLesson = getSelectedLesson(settings.lessonNumber);
+  if (selectedLesson) settingPills.unshift(`Математика · 6 класс · № ${selectedLesson.number}`);
 
   useEffect(() => {
     const previous = previousContentRef.current;
@@ -75,8 +77,8 @@ export default function Index() {
   }, [content, isBusy]);
 
   const handleGenerate = async () => {
-    if (!images.length) {
-      toast.error("Загрузите хотя бы одну страницу");
+    if (!canGenerateMaterial(images.length, settings.lessonNumber)) {
+      toast.error("Выберите тему урока или загрузите страницы");
       return;
     }
     trackEvent("ai_conspect_generate_click", {
@@ -153,9 +155,9 @@ export default function Index() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-background">
+    <div className="h-dvh overflow-y-auto bg-background">
       <Toaster position="top-center" richColors />
-      <main className="mx-auto grid h-full max-w-7xl grid-rows-[auto_auto_minmax(0,1fr)] gap-3 px-3 py-3 sm:px-4">
+      <main className="mx-auto grid min-h-full max-w-7xl grid-rows-[auto_auto_minmax(180px,1fr)] gap-3 px-3 py-3 sm:px-4">
         <section className="app-card p-3">
           {hasContent && (
             <button
@@ -209,7 +211,7 @@ export default function Index() {
                     <p className="text-[11px] text-muted-foreground">
                       {images.length
                         ? `${images.length} файл(ов)`
-                        : "Загрузите материалы"}
+                        : "Файлы необязательны при выборе темы"}
                     </p>
                   </div>
                 </div>
@@ -283,7 +285,7 @@ export default function Index() {
               })}
                 <button
                   type="button"
-                  disabled={isBusy || images.length === 0}
+                    disabled={isBusy || !canGenerateMaterial(images.length, settings.lessonNumber)}
                   onClick={() => setSettingsOpen(true)}
                   className="app-chip"
                 >
@@ -377,13 +379,13 @@ export default function Index() {
                   <Sparkles className="h-7 w-7 text-primary" />
                 </div>
                 <p className="max-w-sm">
-                  Загрузите страницы учебника слева и нажмите «{getGenerateActionLabel(settings.format, false)}».
+                  {selectedLesson ? `№ ${selectedLesson.number} · ${selectedLesson.title}` : "Выберите тему урока или загрузите страницы учебника"}.
                 </p>
               </div>
             )}
 
             {hasContent && (content || isBusy) && (
-              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="min-h-0 flex-1 p-4 sm:p-6">
                 {editing ? (
                   <SummaryResult
                     content={content}

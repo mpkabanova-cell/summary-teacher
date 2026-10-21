@@ -11,6 +11,7 @@ export interface SummarySettings {
   detail: DetailLevel;
   level: ExplanationLevel;
   focus: string;
+  lessonNumber?: number | undefined;
 }
 
 export const FORMAT_OPTIONS: {

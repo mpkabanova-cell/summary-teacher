@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invokeSummarizeStream } from "@/lib/edgeInvoke";
 import { trackEvent } from "@/lib/analytics";
 import { cleanSummaryContent } from "@/lib/summary-cleanup";
+import { canGenerateMaterial } from "@/lib/lesson-directory";
 import {
   DEFAULT_SETTINGS,
   normalizeSummarySettings,
@@ -183,8 +184,8 @@ export function useSummarize() {
 
   const generate = useCallback(
     async (imageList = images) => {
-      if (!imageList.length) {
-        throw new Error("Загрузите хотя бы одну страницу");
+      if (!canGenerateMaterial(imageList.length, settingsRef.current.lessonNumber)) {
+        throw new Error("Выберите тему урока или загрузите страницы");
       }
       const activeSettings = settingsRef.current;
       setImages(imageList);
@@ -220,8 +221,8 @@ export function useSummarize() {
   );
 
   const regenerate = useCallback(async () => {
-    if (!images.length) {
-      throw new Error("Нет загруженных страниц — загрузите материалы снова");
+    if (!canGenerateMaterial(images.length, settingsRef.current.lessonNumber)) {
+      throw new Error("Выберите тему урока или загрузите страницы");
     }
     const activeSettings = settingsRef.current;
     setContent("");
