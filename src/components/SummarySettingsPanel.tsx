@@ -1,10 +1,8 @@
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ToggleGroup } from "@/components/ui/toggle-group";
 import { LessonSelector } from "@/components/LessonSelector";
 import { canGenerateMaterial } from "@/lib/lesson-directory";
-import { DETAIL_OPTIONS, LEVEL_OPTIONS, type SummarySettings } from "@/lib/summary-types";
+import type { SummarySettings } from "@/lib/summary-types";
 
 interface SummarySettingsPanelProps {
   settings: SummarySettings;
