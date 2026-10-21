@@ -57,7 +57,7 @@ export function getSelectedLesson(number?: number): Lesson | undefined {
 }
 
 export function canGenerateMaterial(imageCount: number, lessonNumber?: number): boolean {
-  return imageCount > 0 || Boolean(getSelectedLesson(lessonNumber));
+  return Boolean(getSelectedLesson(lessonNumber));
 }
 
 export function formatLessonDate(date: string): string {

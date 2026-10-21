@@ -1,4 +1,4 @@
-export type SummaryFormat = "notes" | "cheatsheet" | "table" | "qa";
+export type SummaryFormat = "bundle" | "notes" | "cheatsheet" | "table" | "qa";
 
 export type DetailLevel = "brief" | "medium" | "detailed";
 
@@ -20,6 +20,7 @@ export const FORMAT_OPTIONS: {
   emoji: string;
   description: string;
 }[] = [
+  { value: "bundle", label: "Комплект материалов", emoji: "📚", description: "Все материалы по теме" },
   {
     value: "notes",
     label: "Конспект",
@@ -96,6 +97,7 @@ const FORMAT_ACTION_LABELS: Record<
 };
 
 const REFINEMENT_COMPATIBILITY: Record<SummaryFormat, RefinementType[]> = {
+  bundle: [],
   notes: ["shorter", "examples", "simpler", "quiz"],
   cheatsheet: ["shorter", "simpler", "quiz"],
   table: ["shorter", "simpler", "quiz"],
@@ -122,11 +124,7 @@ const REFINEMENT_DISABLED_REASONS: Partial<
 export function normalizeSummarySettings(
   settings: SummarySettings,
 ): SummarySettings {
-  const format = settings.format as string;
-  if (format === "diagram" || !FORMAT_OPTIONS.some((o) => o.value === format)) {
-    return { ...settings, format: DEFAULT_SETTINGS.format };
-  }
-  return settings;
+  return { ...settings, format: "bundle" };
 }
 
 export function getGenerateActionLabel(
@@ -169,7 +167,7 @@ export const MAX_BASE64_PER_FILE = 4_000_000;
 export const MAX_BASE64_TOTAL = 6_000_000;
 
 export const DEFAULT_SETTINGS: SummarySettings = {
-  format: "notes",
+  format: "bundle",
   detail: "medium",
   level: "study",
   focus: "",
@@ -182,7 +180,6 @@ export const FEEDBACK_SENT_KEY = "teach-summary-feedback-sent";
 export const MAX_HISTORY = 50;
 
 export interface SummarizeRequest {
-  images: string[];
   settings: SummarySettings;
   existingContent?: string;
   refinement?: RefinementType;
@@ -193,3 +190,12 @@ export interface FeedbackPayload {
   message: string;
   page?: string;
 }
+
+/** Separate teaching roles prevent repeating the same theory and exercises. */
+export const MATERIAL_SECTIONS = [
+  { id: "notes", title: "Опорный конспект", role: "theory", objective: true, workedExamples: true },
+  { id: "algorithms", title: "Памятки и алгоритмы", role: "procedure", objective: false, workedExamples: false },
+  { id: "homework", title: "Домашние задания", role: "practice", objective: false, workedExamples: false },
+  { id: "review", title: "Материалы для повторения и систематизации", role: "retrieval", objective: false, workedExamples: false },
+] as const;
+export const MATERIAL_POLICY = { allSections: true, allowDiagrams: false, duplicateTheory: false, duplicateExercises: false } as const;
