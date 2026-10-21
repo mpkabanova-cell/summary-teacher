@@ -11,7 +11,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
-import { FileUploadZone } from "@/components/FileUploadZone";
 import { SummarySettingsPanel } from "@/components/SummarySettingsPanel";
 import { SummaryResult } from "@/components/SummaryResult";
 import { ProcessingProgress } from "@/components/ProcessingProgress";
@@ -21,9 +20,7 @@ import { canGenerateMaterial, getSelectedLesson } from "@/lib/lesson-directory";
 import { trackEvent } from "@/lib/analytics";
 import { exportMarkdownToDocx } from "@/lib/export-docx";
 import {
-  REFINEMENT_OPTIONS,
   formatSettingsPills,
-  getRefinementAvailability,
   getRegeneratedMessage,
 } from "@/lib/summary-types";
 
@@ -36,8 +33,6 @@ export default function Index() {
   const {
     settings,
     setSettings,
-    images,
-    setImages,
     content,
     contentFormat,
     setContent,
@@ -45,7 +40,6 @@ export default function Index() {
     error,
     generate,
     regenerate,
-    refine,
     resetContent,
     cancel,
     isBusy,
@@ -70,19 +64,22 @@ export default function Index() {
   }, [content, isBusy]);
 
   const handleGenerate = async () => {
-    if (!canGenerateMaterial(images.length, settings.lessonNumber)) {
-      toast.error("Выберите тему урока или загрузите страницы");
+    if (!canGenerateMaterial(0, settings.lessonNumber)) {
+      toast.error("Выберите тему урока");
       return;
     }
     trackEvent("ai_conspect_generate_click", {
       format: settings.format,
       detail: settings.detail,
       level: settings.level,
-      file_count: images.length,
       focus_present: Boolean(settings.focus.trim()),
     });
-    await generate();
-    setSettingsOpen(false);
+    try {
+      await generate();
+      setSettingsOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не удалось создать материалы");
+    }
   };
 
   const handleRegenerate = async () => {
@@ -111,7 +108,7 @@ export default function Index() {
       const topicPart = selectedLesson
         ? ` № ${selectedLesson.number}. ${selectedLesson.title}`
         : "";
-      const filename = `Конспект${topicPart}.docx`.replace(/[\\/:*?"<>|]+/g, " ");
+      const filename = `Материалы${topicPart}.docx`.replace(/[\\/:*?"<>|]+/g, " ");
       await exportMarkdownToDocx(content, { filename });
       trackEvent("ai_conspect_material_action", {
         action: "export_docx",
@@ -144,7 +141,7 @@ export default function Index() {
   };
 
   const handleReset = () => {
-    if (!window.confirm("Удалить текущий конспект?")) return;
+    if (!window.confirm("Удалить текущие материалы?")) return;
     resetContent();
     setEditing(false);
     setSettingsOpen(true);
@@ -154,157 +151,53 @@ export default function Index() {
   return (
     <div className="h-dvh overflow-y-auto bg-background">
       <Toaster position="top-center" richColors />
-      <main className="mx-auto grid min-h-full max-w-7xl grid-rows-[auto_auto_minmax(180px,1fr)] gap-3 px-3 py-3 sm:px-4">
-        <section className="app-card p-3">
-          {hasContent && (
-            <button
-              type="button"
-              onClick={() => setSettingsOpen((open) => !open)}
-              className="flex w-full items-center justify-between gap-3 text-left"
-              aria-expanded={settingsOpen}
-            >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-base font-semibold leading-tight">
-                    Материалы и настройки
-                  </h1>
-                  <span className="text-xs text-muted-foreground">
-                    {images.length} файл(ов)
-                  </span>
-                </div>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {settingPills.map((pill) => (
-                    <span key={pill} className="settings-pill">
-                      {pill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-900">
-                {settingsOpen ? "Скрыть" : "Показать"}
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${
-                    settingsOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </span>
-            </button>
-          )}
-
-          {(!hasContent || settingsOpen) && (
-            <div
-              className={
-                hasContent
-                  ? "mt-3 grid gap-3 border-t border-border/70 pt-3 lg:grid-cols-[220px_minmax(0,1fr)]"
-                  : "grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)]"
-              }
-            >
-              <div className="rounded-2xl border border-border/70 bg-muted/20 p-3">
-                <div className="mb-2 flex items-start justify-between gap-2">
-                  <div>
-                    <h1 className="text-base font-semibold leading-tight">
-                      Материалы
-                    </h1>
-                    <p className="text-[11px] text-muted-foreground">
-                      {images.length
-                        ? `${images.length} файл(ов)`
-                        : "Файлы необязательны при выборе темы"}
-                    </p>
-                  </div>
-                </div>
-                <FileUploadZone
-                  onImagesReady={(imgs) => {
-                    if (imgs.length > images.length) {
-                      trackEvent("ai_conspect_material_uploaded", {
-                        file_count: imgs.length,
-                        scenario: "teach_summary",
-                      });
-                    }
-                    setImages(imgs);
-                  }}
-                  disabled={isBusy}
-                />
-              </div>
-
-              <div className="rounded-2xl border border-border/70 bg-card p-3 sm:p-4">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <h2 className="text-lg font-semibold leading-tight">
-                      Настройки генерации
-                    </h2>
-                  </div>
-                </div>
-                <SummarySettingsPanel
-                  settings={settings}
-                  onSettingsChange={setSettings}
-                  onGenerate={() =>
-                    void (hasContent ? handleRegenerate() : handleGenerate())
-                  }
-                  hasImages={images.length > 0}
-                  hasContent={hasContent}
-                  isBusy={isBusy}
-                />
-              </div>
+      <main className="mx-auto flex min-h-full max-w-7xl flex-col gap-3 px-3 py-3 sm:px-4">
+        <section className="border-b border-border bg-card p-3 sm:p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-lg font-semibold">Конспект · Материалы к уроку</h1>
+              {hasContent && <div className="mt-2 flex flex-wrap gap-1.5">
+                {settingPills.map((pill) => <span key={pill} className="settings-pill">{pill}</span>)}
+              </div>}
             </div>
-          )}
+            {hasContent && <Button variant="ghost" size="sm" disabled={isBusy} onClick={() => setSettingsOpen((open) => !open)} aria-expanded={settingsOpen} className="shrink-0">
+              Настройки <ChevronDown className={`h-4 w-4 transition-transform ${settingsOpen ? "rotate-180" : ""}`} />
+            </Button>}
+          </div>
+          {(!hasContent || settingsOpen) && <div className="mt-4">
+            <SummarySettingsPanel settings={settings} onSettingsChange={setSettings} onGenerate={() => void (hasContent ? handleRegenerate() : handleGenerate())} hasContent={hasContent} isBusy={isBusy} />
+          </div>}
         </section>
 
-        <section className="app-card min-h-12 p-2">
+        <section className="border-b border-border p-2" hidden={!hasContent && !isBusy}>
           <div className="flex items-center gap-2 overflow-x-auto">
             {hasContent ? (
               <>
-              {REFINEMENT_OPTIONS.map((r) => {
-                const availability = getRefinementAvailability(
-                  contentFormat,
-                  r.value,
-                );
-                return (
-                  <button
-                    key={r.value}
-                    type="button"
-                    disabled={isBusy || availability.disabled}
-                    title={availability.reason}
-                    onClick={() => {
-                      trackEvent("ai_conspect_material_action", {
-                        action: "refine",
-                        format: contentFormat,
-                        refinement_type: r.value,
-                        content_length: content.length,
-                      });
-                      void refine(r.value);
-                    }}
-                    className="app-chip disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <span>{r.emoji}</span>
-                    {r.label}
-                  </button>
-                );
-              })}
-                <button
+                <Button
                   type="button"
-                    disabled={isBusy || !canGenerateMaterial(images.length, settings.lessonNumber)}
+                    disabled={isBusy || !canGenerateMaterial(0, settings.lessonNumber)}
                   onClick={() => setSettingsOpen(true)}
-                  className="app-chip"
+                  className="rounded-lg border border-border bg-secondary text-secondary-foreground hover:bg-muted"
                 >
                   <RefreshCw className="h-4 w-4 shrink-0" />
                   Перегенерировать
-                </button>
+                </Button>
                 {!editing && (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setEditing(true)}
                     disabled={isBusy}
-                    className="app-chip"
+                    className="rounded-lg border border-border bg-secondary text-secondary-foreground hover:bg-muted"
                   >
                     <Pencil className="h-4 w-4 shrink-0" />
                     Редактировать
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
                   type="button"
                   onClick={() => void handleExportDocx()}
                   disabled={isBusy || isExportingDocx}
-                   className="app-chip"
+                   className="rounded-lg border border-border bg-secondary text-secondary-foreground hover:bg-muted"
                 >
                   {isExportingDocx ? (
                     <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
@@ -312,32 +205,27 @@ export default function Index() {
                     <Download className="h-4 w-4 shrink-0" />
                   )}
                   {isExportingDocx ? "DOCX…" : "DOCX"}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => void handleCopy()}
                   disabled={isBusy || !content.trim()}
-                  className="app-chip"
+                  className="rounded-lg border border-border bg-secondary text-secondary-foreground hover:bg-muted"
                 >
                   <Copy className="h-4 w-4 shrink-0" />
                   Копировать
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   disabled={isBusy}
                   onClick={handleReset}
-                  className="app-chip"
+                  className="rounded-lg border border-border bg-secondary text-secondary-foreground hover:bg-muted"
                 >
                   <Trash2 className="h-4 w-4 shrink-0" />
                   Сброс
-                </button>
+                </Button>
               </>
-            ) : (
-              <p className="px-2 text-sm text-muted-foreground">
-                После генерации здесь появятся быстрые действия и варианты
-                улучшения конспекта.
-              </p>
-            )}
+            ) : null}
             {isBusy && (
               <Button variant="destructive" size="sm" onClick={cancel}>
                 <Square className="h-4 w-4 shrink-0" />
@@ -347,7 +235,7 @@ export default function Index() {
           </div>
         </section>
 
-        <section className="app-card min-h-0 overflow-hidden p-0">
+        <section className="min-h-48 flex-1 overflow-hidden bg-card p-0">
           <div className="flex h-full min-h-0 flex-col">
             {isBusy && (
               <div className="border-b border-border/70 p-3">
@@ -359,18 +247,18 @@ export default function Index() {
             )}
 
             {error && (
-              <p className="m-3 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700">
+              <p className="m-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                 {error}
               </p>
             )}
 
             {!hasContent && !isBusy && (
               <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                <div className="h-14 w-14 rounded-2xl bg-violet-100 flex items-center justify-center mb-4">
+                <div className="h-14 w-14 rounded-lg bg-secondary flex items-center justify-center mb-4">
                   <Sparkles className="h-7 w-7 text-primary" />
                 </div>
                 <p className="max-w-sm">
-                  {selectedLesson ? `№ ${selectedLesson.number} · ${selectedLesson.title}` : "Выберите тему урока или загрузите страницы учебника"}.
+                  {selectedLesson ? `№ ${selectedLesson.number} · ${selectedLesson.title}` : "Выберите тему урока учебника"}.
                 </p>
               </div>
             )}
