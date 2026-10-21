@@ -230,9 +230,9 @@ function renderTable(token: Tokens.Table): Table {
           new TableCell({
             width: { size: columnWidths[i] ?? baseWidth, type: WidthType.DXA },
             margins: { top: 60, bottom: 60, left: 100, right: 100 },
-            shading: header
-              ? { fill: "EDEBF7", type: ShadingType.CLEAR }
-              : undefined,
+            ...(header
+              ? { shading: { fill: "EDEBF7", type: ShadingType.CLEAR } }
+              : {}),
             children: [
               new Paragraph({
                 children: renderInlineTokens(cell.tokens, {

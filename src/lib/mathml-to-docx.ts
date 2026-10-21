@@ -69,7 +69,7 @@ function walkElement(el: Element): MathComponent[] {
       return [
         new MathRadical({
           children: ensure(kids[0] ? walkElement(kids[0]) : []),
-          degree: kids[1] ? walkElement(kids[1]) : undefined,
+          ...(kids[1] ? { degree: walkElement(kids[1]) } : {}),
         }),
       ];
     case "msup":
