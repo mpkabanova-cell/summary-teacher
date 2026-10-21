@@ -15,7 +15,8 @@ const requestSchema = z.object({
     detail: z.enum(["brief", "medium", "detailed"]),
     level: z.enum(["simple", "study", "deep"]),
     focus: z.string().max(2000),
-    lessonNumber: z.number().int().min(1).max(170).optional(),
+    lessonNumber: z.number().int().min(1).max(300).optional(),
+    courseId: z.string().regex(/^[a-z]+-\d{1,2}$/).optional(),
   }),
   existingContent: z.string().max(200_000).optional(),
   refinement: z.enum(["shorter", "examples", "simpler", "quiz"]).optional(),
@@ -48,7 +49,7 @@ export const Route = createFileRoute("/api/public/summarize")({
                 return;
               }
               const { settings, existingContent, refinement } = body;
-              if (!canGenerateMaterial(0, settings.lessonNumber)) {
+              if (!canGenerateMaterial(0, settings.lessonNumber, settings.courseId)) {
                 send({ error: "Выберите тему урока" });
                 controller.close();
                 return;
