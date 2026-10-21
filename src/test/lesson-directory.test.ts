@@ -22,7 +22,7 @@ describe("Lesson directory", () => {
     expect(canGenerateMaterial(0, 38)).toBe(true);
     expect(canGenerateMaterial(0)).toBe(false);
     expect(canGenerateMaterial(0, 999)).toBe(false);
-    expect(canGenerateMaterial(1)).toBe(true);
+    expect(canGenerateMaterial(1)).toBe(false);
   });
   it("searches lesson numbers and topic words", () => {
     expect(searchLessons("38").map((lesson) => lesson.number)).toContain(38);

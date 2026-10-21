@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export interface ToggleOption<T extends string> {
   value: T;
@@ -46,14 +47,16 @@ export function ToggleGroup<T extends string>({
       {options.map((opt) => {
         const active = value === opt.value;
         return (
-          <button
+          <Button
             key={opt.value}
             type="button"
             disabled={disabled}
+            variant="ghost"
+            aria-pressed={active}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "min-w-0 rounded-xl px-3 py-2.5 text-sm font-medium leading-tight transition-colors text-center",
-              "whitespace-nowrap overflow-hidden text-ellipsis",
+              "h-auto min-h-10 min-w-0 rounded-lg px-2 py-2.5 text-sm font-medium leading-tight transition-colors text-center",
+              "whitespace-normal break-words",
               "border border-transparent",
               active
                 ? "bg-primary text-primary-foreground shadow-sm"
@@ -63,7 +66,7 @@ export function ToggleGroup<T extends string>({
             )}
           >
             {opt.label}
-          </button>
+          </Button>
         );
       })}
     </div>

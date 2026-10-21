@@ -14,13 +14,13 @@ export function ProcessingProgress({
   const isQuestions = format === "qa";
   const streamingLabel = isQuestions
     ? "Формируем вопросы…"
-    : "Печатаем конспект…";
+    : "Создаём материалы…";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-3 rounded-xl bg-violet-50 border border-violet-100 px-4 py-3"
+      className="flex items-center gap-3 rounded-lg bg-secondary border border-border px-4 py-3"
     >
       <Loader2 className="h-5 w-5 animate-spin text-primary" />
       <div>

@@ -10,7 +10,6 @@ import {
   FEEDBACK_SENT_KEY,
   HISTORY_INDEX_KEY,
   HISTORY_KEY,
-  MATERIALS_KEY,
   MAX_HISTORY,
   type RefinementType,
   type SummaryFormat,
@@ -27,36 +26,11 @@ const REFINEMENT_BEHAVIOR: Record<RefinementType, "append" | "rewrite"> = {
   quiz: "append",
 };
 
-function readStoredImages(): string[] {
-  try {
-    const raw = sessionStorage.getItem(MATERIALS_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) && parsed.every((item) => typeof item === "string")
-      ? parsed
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function storeImages(images: string[]): void {
-  try {
-    if (images.length) {
-      sessionStorage.setItem(MATERIALS_KEY, JSON.stringify(images));
-    } else {
-      sessionStorage.removeItem(MATERIALS_KEY);
-    }
-  } catch {
-    // Large PDFs can exceed browser storage; regeneration still works in memory.
-  }
-}
-
 export function useSummarize() {
   const [settings, setSettingsState] = useState<SummarySettings>(() =>
     normalizeSummarySettings(DEFAULT_SETTINGS),
   );
   const settingsRef = useRef(settings);
-  const [images, setImagesState] = useState<string[]>(readStoredImages);
   const [content, setContent] = useState("");
   const [contentFormat, setContentFormat] = useState<SummaryFormat>(
     settings.format,
@@ -74,11 +48,6 @@ export function useSummarize() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const historyIndexRef = useRef(-1);
   const abortRef = useRef<AbortController | null>(null);
-
-  const setImages = useCallback((nextImages: string[]) => {
-    setImagesState(nextImages);
-    storeImages(nextImages);
-  }, []);
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -122,7 +91,6 @@ export function useSummarize() {
 
   const runStream = useCallback(
     async (params: {
-      imageList: string[];
       settings: SummarySettings;
       existingContent?: string;
       refinement?: RefinementType;
@@ -148,7 +116,6 @@ export function useSummarize() {
         setStatus("streaming");
         await invokeSummarizeStream(
           {
-            images: params.imageList,
             settings: params.settings,
             existingContent: params.existingContent,
             refinement: params.refinement,
@@ -168,7 +135,6 @@ export function useSummarize() {
             format: params.settings.format,
             detail: params.settings.detail,
             level: params.settings.level,
-            file_count: params.imageList.length,
             content_length: cleaned.length,
             duration_ms: Math.round(performance.now() - startedAt),
           });
@@ -177,24 +143,21 @@ export function useSummarize() {
         if ((e as Error).name === "AbortError") return;
         setStatus("error");
         setError(e instanceof Error ? e.message : "Неизвестная ошибка");
+        throw e;
       }
     },
     [saveSnapshot, setActiveContentFormat],
   );
 
-  const generate = useCallback(
-    async (imageList = images) => {
-      if (!canGenerateMaterial(imageList.length, settingsRef.current.lessonNumber)) {
-        throw new Error("Выберите тему урока или загрузите страницы");
-      }
-      const activeSettings = settingsRef.current;
-      setImages(imageList);
-      setContent("");
-      setActiveContentFormat(activeSettings.format);
-      await runStream({ imageList, settings: activeSettings });
-    },
-    [images, runStream, setActiveContentFormat, setImages],
-  );
+  const generate = useCallback(async () => {
+    if (!canGenerateMaterial(0, settingsRef.current.lessonNumber)) {
+      throw new Error("Выберите тему урока");
+    }
+    const activeSettings = settingsRef.current;
+    setContent("");
+    setActiveContentFormat(activeSettings.format);
+    await runStream({ settings: activeSettings });
+  }, [runStream, setActiveContentFormat]);
 
   const refine = useCallback(
     async (type: RefinementType) => {
@@ -210,25 +173,24 @@ export function useSummarize() {
         setContent(base + separator);
       }
       await runStream({
-        imageList: images.length ? images : [],
         settings: refinementSettings,
         existingContent: base,
         refinement: type,
         append: behavior === "append",
       });
     },
-    [content, images, runStream],
+    [content, runStream],
   );
 
   const regenerate = useCallback(async () => {
-    if (!canGenerateMaterial(images.length, settingsRef.current.lessonNumber)) {
-      throw new Error("Выберите тему урока или загрузите страницы");
+    if (!canGenerateMaterial(0, settingsRef.current.lessonNumber)) {
+      throw new Error("Выберите тему урока");
     }
     const activeSettings = settingsRef.current;
     setContent("");
     setActiveContentFormat(activeSettings.format);
-    await runStream({ imageList: images, settings: activeSettings });
-  }, [images, runStream, setActiveContentFormat]);
+    await runStream({ settings: activeSettings });
+  }, [runStream, setActiveContentFormat]);
 
   const resetContent = useCallback(() => {
     abortRef.current?.abort();
@@ -295,8 +257,6 @@ export function useSummarize() {
     settings,
     setSettings,
     contentFormat,
-    images,
-    setImages,
     content: displayContent,
     setContent: updateContent,
     status,
