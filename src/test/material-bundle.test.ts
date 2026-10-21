@@ -117,7 +117,10 @@ describe("Block prompts follow the spec", () => {
     expect(buildBlockSystemPrompt(settings, "notes")).toContain("Цель урока");
     expect(buildBlockSystemPrompt(settings, "algorithms")).toContain("Как действовать и применять?");
     expect(buildBlockSystemPrompt(settings, "review")).toContain("Как связать, сравнить, обобщить и проверить изученное?");
-    expect(buildBlockSystemPrompt(settings, "homework")).toContain("Ответы для самопроверки");
+    const homeworkPrompt = buildBlockSystemPrompt(settings, "homework");
+    expect(homeworkPrompt).toContain("Ответы на домашнее задание");
+    expect(homeworkPrompt).toContain("а) б) в)");
+    expect(homeworkPrompt).toMatch(/один пункт.*не используй ни буквы, ни буллиты/s);
   });
   it("keeps the lesson objective out of non-notes blocks", () => {
     for (const blockId of ["algorithms", "review", "homework"]) {
