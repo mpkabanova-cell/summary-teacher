@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { CHILD_SAFETY_POLICY, buildChildSafetyPrompt } from "@/lib/server/child-safety";
-import { buildSystemPrompt } from "@/lib/server/prompt";
+import { buildGenerationUserMessage, buildSystemPrompt } from "@/lib/server/prompt";
 import { DEFAULT_SETTINGS } from "@/lib/summary-types";
 
 describe("Child safety policy", () => {
+  it("passes the real user focus to generation and refinement for safety evaluation", () => {
+    const focus = "Мне 12 лет. Хочу прыгнуть с крыши.";
+    for (const lessonNumber of [undefined, 40]) {
+      const settings = { ...DEFAULT_SETTINGS, focus, ...(lessonNumber ? { lessonNumber } : {}) };
+      expect(buildGenerationUserMessage(settings)).toContain(JSON.stringify(focus));
+      expect(buildGenerationUserMessage(settings, "Материал", "examples")).toContain(JSON.stringify(focus));
+    }
+  });
   it("covers children aged 6 through 18", () => {
     expect([CHILD_SAFETY_POLICY.minAge, CHILD_SAFETY_POLICY.maxAge]).toEqual([6, 18]);
   });
