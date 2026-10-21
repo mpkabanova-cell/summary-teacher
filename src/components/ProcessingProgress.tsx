@@ -5,7 +5,7 @@ import type { SummaryFormat } from "@/lib/summary-types";
 interface ProcessingProgressProps {
   streaming?: boolean;
   format?: SummaryFormat;
-  blockLabel?: string;
+  blockLabel?: string | undefined;
 }
 
 export function ProcessingProgress({
