@@ -11,5 +11,6 @@
 
 - AI summaries stream from `src/routes/api/public/summarize.ts` (SSE, OpenRouter, key in `OPENROUTER_API_KEY`) — kept from the original app so output quality is unchanged.
 - The main page loads client-only (`ClientOnly` + lazy import of `src/app/KonspektApp.tsx`) because pdf.js/jsPDF/html2canvas need the browser.
+- Prebundle React renderer/runtime entry points and the lazy lesson dialog together in Vite's client optimizer to prevent dependency discovery from mixing React generations in an open preview.
 - The read-only lesson directory is bundled as structured JSON; resolve lesson numbers against that directory on both client and server so the original planning context remains authoritative without a database.
 - Lesson selection uses a modal with seven fixed-height visible rows and recomputes proximity to the live Moscow calendar date each time it opens; this keeps date focus and neighboring lessons consistent across screens.

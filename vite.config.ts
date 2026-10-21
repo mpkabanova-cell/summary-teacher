@@ -7,6 +7,20 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  vite: {
+    optimizeDeps: {
+      // Prebundle the lazy app's React/dialog entry points together so opening
+      // it cannot replace React while the renderer still uses the previous copy.
+      include: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "@radix-ui/react-dialog",
+      ],
+    },
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
