@@ -4,7 +4,7 @@ import { z } from "zod";
 import { canGenerateMaterial } from "@/lib/lesson-directory";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "google/gemini-2.5-flash";
+const MODEL = "google/gemini-3.1-flash-lite";
 const CONNECT_TIMEOUT_MS = 30_000;
 const TOTAL_TIMEOUT_MS = 180_000;
 const MAX_IMAGES = 40;
