@@ -27,7 +27,6 @@ import {
 import {
   REFINEMENT_OPTIONS,
   formatSettingsPills,
-  getGenerateActionLabel,
   getRefinementAvailability,
   getRegeneratedMessage,
 } from "@/lib/summary-types";
