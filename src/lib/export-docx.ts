@@ -161,7 +161,7 @@ const HEADING_LEVELS = [
 
 function renderHeading(token: Tokens.Heading): Paragraph {
   return new Paragraph({
-    heading: HEADING_LEVELS[Math.min(token.depth, 6) - 1],
+    heading: HEADING_LEVELS[Math.min(token.depth, 6) - 1] ?? HeadingLevel.HEADING_1,
     children: renderInlineTokens(token.tokens, {}),
   });
 }
